@@ -4,6 +4,7 @@ Defines the fields that can be added to redisco models.
 """
 import time
 from datetime import datetime, date
+from dateutil.tz import tzutc, tzlocal
 from redisco.containers import List
 from exceptions import FieldValidationError
 
@@ -189,7 +190,10 @@ class DateTimeField(Attribute):
 
     def typecast_for_read(self, value):
         try:
-            return datetime.fromtimestamp(float(value))
+            # We load as if the timestampe was naive
+            dt = datetime.fromtimestamp(float(value))
+            # And gently override (ie: not convert) to the TZ to UTC
+            return dt.replace(tzinfo=tzutc())
         except TypeError, ValueError:
             return None
 
@@ -199,7 +203,10 @@ class DateTimeField(Attribute):
                     (self.name, type(value)))
         if value is None:
             return None
-        return "%d.%06d" % (time.mktime(value.timetuple()),  value.microsecond)
+        # Are we timezone aware ? If no, make it TimeZone Local
+        if value.tzinfo is None:
+           value = value.replace(tzinfo=tzlocal())
+        return "%d.%06d" % (time.mktime(value.utctimetuple()),  value.microsecond)
 
     def value_type(self):
         return datetime
@@ -216,17 +223,22 @@ class DateField(Attribute):
 
     def typecast_for_read(self, value):
         try:
-            return date.fromtimestamp(float(value))
+            # We load as if it is UTC time
+            dt = datetime.fromtimestamp(float(value))
+            # And assign (ie: not convert) the UTC TimeZone
+            return dt.replace(tzinfo=tzutc())
         except TypeError, ValueError:
             return None
 
     def typecast_for_storage(self, value):
-        if not isinstance(value, date):
-            raise TypeError("%s should be date object, and not a %s" %
+        if not isinstance(value, datetime):
+            raise TypeError("%s should be datetime object, and not a %s" %
                     (self.name, type(value)))
         if value is None:
             return None
-        return "%f" % time.mktime(value.timetuple())
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=tzlocal())
+        return "%d" % time.mktime(value.utctimetuple())
 
     def value_type(self):
         return date
