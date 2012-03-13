@@ -392,7 +392,7 @@ class SortedSet(Container):
 
     def add(self, member, score):
         """Adds member to the set."""
-        self.zadd(member, score)
+        return self.zadd(member, score)
 
     def remove(self, member):
         """Removes member from set."""
