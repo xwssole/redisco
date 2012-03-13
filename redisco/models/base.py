@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, date
+from dateutil.tz import tzutc
 import redisco
 from redisco.containers import Set, List, SortedSet, NonPersistentList
 from attributes import *
@@ -348,14 +349,14 @@ class Model(object):
         for k, v in self.attributes.iteritems():
             if isinstance(v, DateTimeField):
                 if v.auto_now:
-                    setattr(self, k, datetime.now())
+                    setattr(self, k, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
-                    setattr(self, k, datetime.now())
+                    setattr(self, k, datetime.now(tz=tzutc()))
             elif isinstance(v, DateField):
                 if v.auto_now:
-                    setattr(self, k, date.today())
+                    setattr(self, k, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
-                    setattr(self, k, date.today())
+                    setattr(self, k, datetime.now(tz=tzutc()))
             for_storage = getattr(self, k)
             if for_storage is not None:
                 h[k] = v.typecast_for_storage(for_storage)
