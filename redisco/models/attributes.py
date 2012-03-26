@@ -5,6 +5,7 @@ Defines the fields that can be added to redisco models.
 import time
 from datetime import datetime, date
 from dateutil.tz import tzutc, tzlocal
+from calendar import timegm
 from redisco.containers import List
 from exceptions import FieldValidationError, MissingID
 
@@ -197,9 +198,9 @@ class DateTimeField(Attribute):
     def typecast_for_read(self, value):
         try:
             # We load as if the timestampe was naive
-            dt = datetime.fromtimestamp(float(value))
+            dt = datetime.fromtimestamp(float(value), tzutc())
             # And gently override (ie: not convert) to the TZ to UTC
-            return dt.replace(tzinfo=tzutc())
+            return dt
         except TypeError, ValueError:
             return None
 
@@ -212,7 +213,7 @@ class DateTimeField(Attribute):
         # Are we timezone aware ? If no, make it TimeZone Local
         if value.tzinfo is None:
            value = value.replace(tzinfo=tzlocal())
-        return "%d.%06d" % (time.mktime(value.utctimetuple()),  value.microsecond)
+        return "%d.%06d" % (float(timegm(value.utctimetuple())),  value.microsecond)
 
     def value_type(self):
         return datetime
@@ -230,9 +231,9 @@ class DateField(Attribute):
     def typecast_for_read(self, value):
         try:
             # We load as if it is UTC time
-            dt = datetime.fromtimestamp(float(value))
+            dt = datetime.fromtimestamp(float(value), tzutc())
             # And assign (ie: not convert) the UTC TimeZone
-            return dt.replace(tzinfo=tzutc())
+            return dt
         except TypeError, ValueError:
             return None
 
@@ -244,7 +245,7 @@ class DateField(Attribute):
             return None
         if value.tzinfo is None:
             value = value.replace(tzinfo=tzlocal())
-        return "%d" % time.mktime(value.utctimetuple())
+        return "%d" % float(timegm(value.utctimetuple()))
 
     def value_type(self):
         return date
