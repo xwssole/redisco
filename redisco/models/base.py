@@ -20,6 +20,15 @@ ZINDEXABLE = (IntegerField, DateTimeField, DateField, FloatField)
 def _initialize_attributes(model_class, name, bases, attrs):
     """Initialize the attributes of the model."""
     model_class._attributes = {}
+
+    # In case of inheritance, we also add the parent's
+    # attributes in the list of our attributes
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for k, v in parent._attributes.iteritems():
+            model_class._attributes[k] = v
+
     for k, v in attrs.iteritems():
         if isinstance(v, Attribute):
             model_class._attributes[k] = v
@@ -46,6 +55,12 @@ def _initialize_referenced(model_class, attribute):
 def _initialize_lists(model_class, name, bases, attrs):
     """Stores the list fields descriptors of a model."""
     model_class._lists = {}
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for k, v in parent._lists.iteritems():
+            model_class._lists[k] = v
+
     for k, v in attrs.iteritems():
         if isinstance(v, ListField):
             model_class._lists[k] = v
@@ -72,6 +87,16 @@ def _initialize_references(model_class, name, bases, attrs):
 def _initialize_indices(model_class, name, bases, attrs):
     """Stores the list of indexed attributes."""
     model_class._indices = []
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for k, v in parent._attributes.iteritems():
+            if v.indexed:
+                model_class._indices.append(k)
+        for k, v in parent._lists.iteritems():
+            if v.indexed:
+                model_class._indices.append(k)
+
     for k, v in attrs.iteritems():
         if isinstance(v, (Attribute, ListField)) and v.indexed:
             model_class._indices.append(k)
@@ -81,8 +106,18 @@ def _initialize_indices(model_class, name, bases, attrs):
 def _initialize_counters(model_class, name, bases, attrs):
     """Stores the list of counter fields."""
     model_class._counters = []
+
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for c in parent._counters:
+            model_class._counters.append(c)
+
     for k, v in attrs.iteritems():
         if isinstance(v, Counter):
+            # When subclassing, we want to override the attributes
+            if k in model_class._counters:
+                model_class._counters.remove(k)
             model_class._counters.append(k)
 
 def _initialize_key(model_class, name):
