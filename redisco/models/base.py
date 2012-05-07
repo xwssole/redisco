@@ -71,6 +71,18 @@ def _initialize_references(model_class, name, bases, attrs):
     model_class._references = {}
     h = {}
     deferred = []
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for k, v in parent._references.iteritems():
+            model_class._references[k] = v
+            # We skip updating the attributes since this is done
+            # already at the parent construction and then copied back
+            # in the subclass
+            refd = _initialize_referenced(model_class, v)
+            if refd:
+                deferred.append(refd)
+
     for k, v in attrs.iteritems():
         if isinstance(v, ReferenceField):
             model_class._references[k] = v
