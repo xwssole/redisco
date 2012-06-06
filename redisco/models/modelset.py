@@ -25,7 +25,6 @@ class ModelSet(Set):
     # MAGIC METHODS #
     #################
 
-
     def __getitem__(self, index):
         if isinstance(index, slice):
             return map(lambda id: self._get_item_with_id(id), self._set[index])
@@ -59,6 +58,8 @@ class ModelSet(Set):
     ##########################################
 
     def get_by_id(self, id):
+        if (self._filters or self._exclusions or self._zfilters) and str(id) not in self._set:
+            return
         if self.model_class.exists(id):
             return self._get_item_with_id(id)
 
