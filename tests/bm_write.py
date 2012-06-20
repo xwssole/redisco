@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import time
 import random
-from redisco import models
-from redisco.connection import _get_client
+from redisco import models, connection_setup, get_client
 from datetime import datetime
 import timeit
 from functools import partial
@@ -16,8 +15,8 @@ class Person(models.Model):
     date = models.DateTimeField()
 
 if __name__ == '__main__':
-    db = _get_client()
-    db.select(11)
+    connection_setup(db=11)
+    db = get_client()
     db.flushdb()
 
     def rand_date():
