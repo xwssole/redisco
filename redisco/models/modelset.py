@@ -275,7 +275,7 @@ class ModelSet(Set):
 
     def _get_item_with_id(self, id):
         instance = self.model_class()
-        instance._id = str(id)
+        instance.id = str(id)
         return instance
 
     def _build_key_from_filter_item(self, index, value):
