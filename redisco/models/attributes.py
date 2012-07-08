@@ -50,16 +50,8 @@ class Attribute(object):
         try:
             return getattr(instance, '_' + self.name)
         except AttributeError:
-            if not instance.is_new():
-                val = instance.db.hget(instance.key(), self.name)
-                if val is not None:
-                    val = self.typecast_for_read(val)
-                self.__set__(instance, val)
-                return val
-            else:
-                self.__set__(instance, self.default)
-                return self.default
-
+            self.__set__(instance, self.default)
+            return self.default
 
     def __set__(self, instance, value):
         setattr(instance, '_' + self.name, value)
@@ -220,6 +212,7 @@ class DateTimeField(Attribute):
 
     def acceptable_types(self):
         return self.value_type()
+
 
 class DateField(Attribute):
 
