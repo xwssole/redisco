@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 """
 Defines the fields that can be added to redisco models.
 """
@@ -50,16 +50,8 @@ class Attribute(object):
         try:
             return getattr(instance, '_' + self.name)
         except AttributeError:
-            if not instance.is_new():
-                val = instance.db.hget(instance.key(), self.name)
-                if val is not None:
-                    val = self.typecast_for_read(val)
-                self.__set__(instance, val)
-                return val
-            else:
-                self.__set__(instance, self.default)
-                return self.default
-
+            self.__set__(instance, self.default)
+            return self.default
 
     def __set__(self, instance, value):
         setattr(instance, '_' + self.name, value)
@@ -130,12 +122,12 @@ class CharField(Attribute):
             super(CharField, self).validate(instance)
         except FieldValidationError as err:
             errors.extend(err.errors)
-        
+
         val = getattr(instance, self.name)
-          
+
         if val and len(val) > self.max_length:
             errors.append((self.name, 'exceeds max length'))
-        
+
         if errors:
             raise FieldValidationError(errors)
 
@@ -220,6 +212,7 @@ class DateTimeField(Attribute):
 
     def acceptable_types(self):
         return self.value_type()
+
 
 class DateField(Attribute):
 
@@ -386,7 +379,7 @@ class ReferenceField(object):
 
     @property
     def related_name(self):
-        return self._related_name 
+        return self._related_name
 
     def validate(self, instance):
         val = getattr(instance, self.name)

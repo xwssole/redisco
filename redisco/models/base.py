@@ -8,6 +8,7 @@ from key import Key
 from managers import ManagerDescriptor, Manager
 from utils import _encode_key
 from exceptions import FieldValidationError, MissingID, BadKeyError
+from attributes import Counter
 
 __all__ = ['Model', 'from_key']
 
@@ -16,6 +17,7 @@ ZINDEXABLE = (IntegerField, DateTimeField, DateField, FloatField)
 ##############################
 # Model Class Initialization #
 ##############################
+
 
 def _initialize_attributes(model_class, name, bases, attrs):
     """Initialize the attributes of the model."""
@@ -33,6 +35,7 @@ def _initialize_attributes(model_class, name, bases, attrs):
         if isinstance(v, Attribute):
             model_class._attributes[k] = v
             v.name = v.name or k
+
 
 def _initialize_referenced(model_class, attribute):
     """Adds a property to the target of a reference field that
@@ -52,6 +55,7 @@ def _initialize_referenced(model_class, attribute):
         setattr(klass, related_name,
                 property(_related_objects))
 
+
 def _initialize_lists(model_class, name, bases, attrs):
     """Stores the list fields descriptors of a model."""
     model_class._lists = {}
@@ -65,6 +69,7 @@ def _initialize_lists(model_class, name, bases, attrs):
         if isinstance(v, ListField):
             model_class._lists[k] = v
             v.name = v.name or k
+
 
 def _initialize_references(model_class, name, bases, attrs):
     """Stores the list of reference field descriptors of a model."""
@@ -96,6 +101,7 @@ def _initialize_references(model_class, name, bases, attrs):
     attrs.update(h)
     return deferred
 
+
 def _initialize_indices(model_class, name, bases, attrs):
     """Stores the list of indexed attributes."""
     model_class._indices = []
@@ -115,6 +121,7 @@ def _initialize_indices(model_class, name, bases, attrs):
     if model_class._meta['indices']:
         model_class._indices.extend(model_class._meta['indices'])
 
+
 def _initialize_counters(model_class, name, bases, attrs):
     """Stores the list of counter fields."""
     model_class._counters = []
@@ -131,6 +138,7 @@ def _initialize_counters(model_class, name, bases, attrs):
             if k in model_class._counters:
                 model_class._counters.remove(k)
             model_class._counters.append(k)
+
 
 def _initialize_key(model_class, name):
     """Initializes the key of the model."""
@@ -312,37 +320,42 @@ class Model(object):
     def id(self, val):
         """Returns the id of the instance as a string."""
         self._id = str(val)
+        stored_attrs = self.db.hgetall(self.key())
+        attrs = self.attributes.values()
+        for att in attrs:
+            if att.name in stored_attrs and not isinstance(att, Counter):
+                att.__set__(self, att.typecast_for_read(stored_attrs[att.name]))
 
     @property
-    def attributes(cls):
+    def attributes(self):
         """Return the attributes of the model.
 
         Returns a dict with models attribute name as keys
         and attribute descriptors as values.
         """
-        return dict(cls._attributes)
+        return dict(self._attributes)
 
     @property
-    def lists(cls):
+    def lists(self):
         """Returns the lists of the model.
 
         Returns a dict with models attribute name as keys
         and ListField descriptors as values.
         """
-        return dict(cls._lists)
+        return dict(self._lists)
 
     @property
-    def indices(cls):
+    def indices(self):
         """Return a list of the indices of the model."""
-        return cls._indices
+        return self._indices
 
     @property
-    def references(cls):
+    def references(self):
         """Returns the mapping of reference fields of the model."""
-        return cls._references
+        return self._references
 
     @property
-    def db(cls):
+    def db(self):
         """Returns the Redis client used by the model."""
         return redisco.get_client()
 
@@ -360,9 +373,9 @@ class Model(object):
                 + self.references.values())
 
     @property
-    def counters(cls):
+    def counters(self):
         """Returns the mapping of the counters."""
-        return cls._counters
+        return self._counters
 
     #################
     # Class Methods #
@@ -380,7 +393,7 @@ class Model(object):
 
     def _initialize_id(self):
         """Initializes the id of the instance."""
-        self.id = str(self.db.incr(self._key['id']))
+        self._id = str(self.db.incr(self._key['id']))
 
     def _write(self, _new=False):
         """Writes the values of the attributes to the datastore.
