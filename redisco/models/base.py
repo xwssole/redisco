@@ -6,7 +6,6 @@ from redisco.containers import Set, List, SortedSet, NonPersistentList
 from attributes import *
 from key import Key
 from managers import ManagerDescriptor, Manager
-from utils import _encode_key
 from exceptions import FieldValidationError, MissingID, BadKeyError
 from attributes import Counter
 
@@ -463,7 +462,6 @@ class Model(object):
         """
         Set(self._key['all'], pipeline=pipeline).remove(self.id)
 
-
     ############
     # INDICES! #
     ############
@@ -503,7 +501,6 @@ class Model(object):
             score = descriptor.typecast_for_storage(getattr(self, att))
             pipeline.zadd(zindex, self.id, score)
             pipeline.sadd(self.key()['_zindices'], zindex)
-
 
     def _delete_from_indices(self, pipeline):
         """Deletes the object's id from the sets(indices) it has been added
@@ -557,7 +554,7 @@ class Model(object):
                 (self._key[att], self._index_key_for_attr_val(att, sval)))
 
     def _index_key_for_attr_val(self, att, val):
-        return self._key[att][_encode_key(val)]
+        return self._key[att][val]
 
     ##################
     # Python methods #

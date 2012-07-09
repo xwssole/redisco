@@ -5,7 +5,6 @@ from attributes import IntegerField, DateTimeField
 import redisco
 from redisco.containers import SortedSet, Set, List, NonPersistentList
 from exceptions import AttributeNotIndexed
-from utils import _encode_key
 from attributes import ZINDEXABLE
 
 # Model Set
@@ -155,8 +154,10 @@ class ModelSet(Set):
         if self._zfilters:
             self._cached_set = self._add_zfilters()
             return self._cached_set
+        import pdb
+        pdb.set_trace()
         s = Set(self.key)
-        self._expire_or_delete = []
+        self._expire_or_delete = set()
         if self._filters:
             s = self._add_set_filter(s)
         if self._exclusions:
@@ -178,7 +179,7 @@ class ModelSet(Set):
             indices.append(index)
         new_set_key = "~%s.%s" % ("+".join([self.key] + indices), id(self))
         s.intersection(new_set_key, *[Set(n) for n in indices])
-        self._expire_or_delete.append(new_set_key)
+        self._expire_or_delete.add(new_set_key)
         return Set(new_set_key)
 
     def _add_set_exclusions(self, s):
@@ -192,7 +193,7 @@ class ModelSet(Set):
             indices.append(index)
         new_set_key = "~%s.%s" % ("-".join([self.key] + indices), id(self))
         s.difference(new_set_key, *[Set(n) for n in indices])
-        self._expire_or_delete.append(new_set_key)
+        self._expire_or_delete.add(new_set_key)
         return Set(new_set_key)
 
     def _add_zfilters(self):
@@ -246,8 +247,8 @@ class ModelSet(Set):
                          start=start,
                          num=num,
                          desc=desc)
-            self._expire_or_delete.append(old_set_key)
-            self._expire_or_delete.append(new_set_key)
+            self._expire_or_delete.add(old_set_key)
+            self._expire_or_delete.add(new_set_key)
             return List(new_set_key)
 
     def _set_without_ordering(self, skey):
@@ -259,8 +260,8 @@ class ModelSet(Set):
                      store=new_set_key,
                      start=start,
                      num=num)
-        self._expire_or_delete.append(old_set_key)
-        self._expire_or_delete.append(new_set_key)
+        self._expire_or_delete.add(old_set_key)
+        self._expire_or_delete.add(new_set_key)
         return List(new_set_key)
 
     def _get_limit_and_offset(self):
@@ -282,7 +283,7 @@ class ModelSet(Set):
         desc = self.model_class._attributes.get(index)
         if desc:
             value = desc.typecast_for_storage(value)
-        return self.model_class._key[index][_encode_key(value)]
+        return self.model_class._key[index][value]
 
     def _clone(self):
         klass = self.__class__
