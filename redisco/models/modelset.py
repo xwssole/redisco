@@ -154,8 +154,6 @@ class ModelSet(Set):
         if self._zfilters:
             self._cached_set = self._add_zfilters()
             return self._cached_set
-        import pdb
-        pdb.set_trace()
         s = Set(self.key)
         self._expire_or_delete = set()
         if self._filters:
@@ -276,7 +274,7 @@ class ModelSet(Set):
 
     def _get_item_with_id(self, id):
         instance = self.model_class()
-        instance.id = str(id)
+        instance._id = str(id)
         return instance
 
     def _build_key_from_filter_item(self, index, value):
