@@ -60,8 +60,8 @@ class Set(Container):
     def remove(self, value):
         """Remove the value from the redis set."""
         if not self.srem(value):
-            raise KeyError, value
-        
+            raise KeyError(value)
+
     def pop(self):
         """Remove and return (pop) a random element from the Set."""
         return self.spop()
@@ -114,7 +114,7 @@ class Set(Container):
     def __ge__(self, other):
         """Test whether every element in other is in the set."""
         return self.db.sinter([self.key, other.key]) == other.all()
-    
+
     def __gt__(self, other):
         """Test whether the set is a true superset of other."""
         return self >= other and self != other
@@ -161,11 +161,11 @@ class Set(Container):
     def difference_update(self, *others):
         """Update the set, removing elements found in others."""
         self.db.sdiffstore(self.key, [o.key for o in [self.key] + others])
-        
+
     def __isub__(self, other):
         self.db.sdiffstore(self.key, [self.key, other.key])
         return self
-    
+
     def all(self):
         return self.db.smembers(self.key)
     members = property(all)
@@ -183,7 +183,7 @@ class Set(Container):
     def __iter__(self):
         return self.members.__iter__()
 
-    
+
     def sinter(self, *other_sets):
         """Performs an intersection between Sets.
 
