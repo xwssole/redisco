@@ -161,7 +161,7 @@ class ModelSet(Set):
         if self._exclusions:
             s = self._add_set_exclusions(s)
         n = self._order(s.key)
-        self._cached_set = list(self._order(s.key))
+        self._cached_set = list(n)
         for key in filter(lambda key: key != self.key, self._expire_or_delete):
             del self.db[key]
         return self._cached_set
