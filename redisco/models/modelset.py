@@ -154,6 +154,8 @@ class ModelSet(Set):
         if self._zfilters:
             self._cached_set = self._add_zfilters()
             return self._cached_set
+        import pdb
+        pdb.set_trace()
         s = Set(self.key)
         self._expire_or_delete = set()
         if self._filters:
