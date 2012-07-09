@@ -27,13 +27,6 @@ class Container(object):
         """Remove container from Redis database."""
         del self.db[self.key]
 
-    def __getattribute__(self, att):
-        if att in object.__getattribute__(self, 'DELEGATEABLE_METHODS'):
-            return partial(getattr(object.__getattribute__(self, 'db'), att), self.key)
-        else:
-            return object.__getattribute__(self, att)
-
-
     @property
     def db(self):
         if self.pipeline:
@@ -47,41 +40,29 @@ class Container(object):
             self.db_cache = connection
             return self.db_cache
 
-    DELEGATEABLE_METHODS = ()
-
 
 class Set(Container):
     """A set stored in Redis."""
 
-    def add(self, value):
+    def sadd(self, value):
         """Add the specified member to the Set."""
-        self.sadd(value)
+        self.db.sadd(self.key, value)
 
-    def remove(self, value):
-        """Remove the value from the redis set."""
-        if not self.srem(value):
-            raise KeyError(value)
+    def srem(self, value):
+        return self.db.srem(self.key, value)
 
-    def pop(self):
+    def spop(self):
         """Remove and return (pop) a random element from the Set."""
-        return self.spop()
+        return self.db.spop()
 
     def discard(self, value):
         """Remove element elem from the set if it is present."""
         self.srem(value)
 
-    def __len__(self):
-        """Return the cardinality of set."""
-        return self.scard()
-
     def __repr__(self):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
                 self.members)
 
-    # TODO: Note, the elem argument to the __contains__(), remove(),
-    #       and discard() methods may be a set
-    def __contains__(self, value):
-        return self.sismember(value)
 
     def isdisjoint(self, other):
         """Return True if the set has no elements in common with other."""
@@ -183,7 +164,6 @@ class Set(Container):
     def __iter__(self):
         return self.members.__iter__()
 
-
     def sinter(self, *other_sets):
         """Performs an intersection between Sets.
 
@@ -205,9 +185,20 @@ class Set(Container):
         """
         return self.db.sdiff([self.key] + [s.key for s in other_sets])
 
+    def scard(self):
+        return self.db.scard(self.key)
 
-    DELEGATEABLE_METHODS = ('sadd', 'srem', 'spop', 'smembers',
-            'scard', 'sismember', 'srandmember')
+    def sismember(self, value):
+        return self.db.sismember(self.key, value)
+
+    def srandmember(self):
+        return self.db.srandmember(self.key)
+
+
+    add = sadd
+    remove = srem
+    __contains__ = sismember
+    __len__ = scard
 
 
 class List(Container):
@@ -217,8 +208,10 @@ class List(Container):
         return self.lrange(0, -1)
     members = property(all)
 
-    def __len__(self):
-        return self.llen()
+    def llen(self):
+        return self.db.llen(self.key)
+
+    __len__ = llen
 
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -232,10 +225,14 @@ class List(Container):
     def __setitem__(self, index, value):
         self.lset(index, value)
 
-    def append(self, value):
-        """Append the value to the list."""
-        self.rpush(value)
-    push = append
+    def lrange(self, start, stop):
+        return self.db.lrange(self.key, start, stop)
+
+    def lpush(self, value):
+        return self.lpush(self.key, value)
+
+    def rpush(self, value):
+        return self.rpush(self.key, value)
 
     def extend(self, iterable):
         """Extend list by appending elements from the iterable."""
@@ -245,32 +242,22 @@ class List(Container):
         """Return number of occurrences of value."""
         return self.members.count(value)
 
-    def index(self, value):
-        """Return first index of value."""
-        return self.all().index(value)
+    def lpop(self):
+        return self.db.lpop(self.key)
 
-    def pop(self):
-        """Remove and return the last item"""
-        return self.rpop()
+    def rpop(self):
+        return self.db.rpop(self.key)
 
-    def pop_onto(self, key):
+    def rpoplpush(self, key):
         """
         Remove an element from the list,
         atomically add it to the head of the list indicated by key
         """
-        return self.rpoplpush(key)
+        return self.db.rpoplpush(self.key, key)
 
-    def shift(self):
-        """Remove and return the first item."""
-        return self.lpop()
-
-    def unshift(self, value):
-        """Add an element at the beginning of the list."""
-        self.lpush(value)
-
-    def remove(self, value, num=1):
+    def lrem(self, value, num=1):
         """Remove first occurrence of value."""
-        self.lrem(value, num)
+        return self.db.lrem(self.key, value, num)
 
     def reverse(self):
         """Reverse in place."""
@@ -289,9 +276,15 @@ class List(Container):
         copy.extend(self)
         return copy
 
-    def trim(self, start, end):
+    def ltrim(self, start, end):
         """Trim the list from start to end."""
-        self.ltrim(start, end)
+        return self.db.ltrim(self.key, start, end)
+
+    def lindex(self, value):
+        return self.db.lindex(self.key, value)
+
+    def lset(self, value=0, index=0):
+        return self.db.lset(self.key, index, value)
 
     def __iter__(self):
         return self.members.__iter__()
@@ -300,8 +293,14 @@ class List(Container):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
                 self.members)
 
-    DELEGATEABLE_METHODS = ('lrange', 'lpush', 'rpush', 'llen',
-            'ltrim', 'lindex', 'lset', 'lpop', 'lrem', 'rpop', 'rpoplpush')
+
+    pop = rpop
+    pop_onto = rpoplpush
+    push = rpush
+    append = rpush
+
+
+
 
 class TypedList(object):
     """Create a container to store a list of objects in Redis.
@@ -390,26 +389,6 @@ class TypedList(object):
 
 class SortedSet(Container):
 
-    def add(self, member, score):
-        """Adds member to the set."""
-        return self.zadd(member, score)
-
-    def remove(self, member):
-        """Removes member from set."""
-        self.zrem(member)
-
-    def incr_by(self, member, increment):
-        """Increments the member by increment."""
-        self.zincrby(member, increment)
-
-    def rank(self, member):
-        """Return the rank (the index) of the element."""
-        return self.zrank(member)
-
-    def revrank(self, member):
-        """Return the rank of the member in reverse order."""
-        return self.zrevrank(member)
-
     def __getitem__(self, index):
         if isinstance(index, slice):
             return self.zrange(index.start, index.stop)
@@ -419,9 +398,6 @@ class SortedSet(Container):
     def score(self, member):
         """Returns the score of member."""
         return self.zscore(member)
-
-    def __len__(self):
-        return self.zcard()
 
     def __contains__(self, val):
         return self.zscore(val) is not None
@@ -499,15 +475,50 @@ class SortedSet(Container):
         return self.zrangebyscore(min, max,
                 start=offset, num=limit)
 
-    def eq(self, value):
-        """Returns the list of the members of the set that have scores
-        equal to value.
-        """
-        return self.zrangebyscore(value, value)
+    def zadd(self, value):
+        return self.db.zadd(value)
 
-    DELEGATEABLE_METHODS = ('zadd', 'zrem', 'zincrby', 'zrank',
-            'zrevrank', 'zrange', 'zrevrange', 'zrangebyscore', 'zcard',
-            'zscore', 'zremrangebyrank', 'zremrangebyscore')
+    def zrem(self, value):
+        return self.db.zrem(value)
+
+    def zincrby(self, att, value=1):
+        return self.db.zincrby(self.key, value, att)
+
+    def zrevrank(self, member):
+        return self.db.zrevrank(self.key, member)
+
+    def zrange(self, start, stop, withscores=False):
+        return self.db.zrange(start, stop, withscores=withscore)
+
+    def zrevrange(self, start, stop, withscores=False):
+        return self.db.zrevrange(start, stop, withscores=withscores)
+
+    def zrangebyscore(self, start, stop, withscores=False):
+        return self.db.zrangebyscore(start, stop, withscores=withscores)
+
+    def zcard(self):
+        return self.db.zcard()
+
+    def zscore(self, value):
+        return self.db.zscore(value)
+
+    def zremrangebyrank(self, start, stop):
+        return self.db.zremrangebyrank(start, stop)
+
+    def zremrangebyscore(self, min_value, max_value):
+        return self.db.zremrangebyscore(min_value, max_value)
+
+    def zrank(self, value):
+        return self.db.zrank(self, value)
+
+    eq = zrangebyscore
+    __len__ = zcard
+    revrank = zrevrank
+    score = zscore
+    rank = zrank
+    incr_by = zincrby
+    add = zadd
+    remove = zrem
 
 
 class NonPersistentList(object):
@@ -527,43 +538,57 @@ class NonPersistentList(object):
 
 class Hash(Container, collections.MutableMapping):
 
-    def __getitem__(self, att):
-        return self.hget(att)
-
-    def __setitem__(self, att, val):
-        self.hset(att, val)
-
-    def __delitem__(self, att):
-        self.hdel(att)
-
-    def __len__(self):
-        return self.hlen()
-
     def __iter__(self):
         return self.hgetall().__iter__()
 
-    def __contains__(self, att):
-        return self.hexists(att)
-
     def __repr__(self):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key, self.hgetall())
-
-    def keys(self):
-        return self.hkeys()
-
-    def values(self):
-        return self.hvals()
-
-    def _get_dict(self):
-        return self.hgetall()
 
     def _set_dict(self, new_dict):
         self.clear()
         self.update(new_dict)
 
+    def hlen(self):
+        return self.db.hlen(self.key)
+
+    def hset(self, member, value):
+        return self.db.hset(self.key, member, value)
+
+    def hdel(self, member):
+        return self.db.hdel(self.key, member)
+
+    def hkeys(self):
+        return self.db.hkeys(self.key)
+
+    def hgetall(self):
+        return self.db.hgetall(self.key)
+
+    def hvals(self):
+        return self.db.hvals(self.key)
+
+    def hget(self, field):
+        return self.db.hget(self.key, field)
+
+    def hexists(self, field):
+        return self.db.hexists(self.key, field)
+
+    def hincrby(self, field, increment=1):
+        return self.db.hincrby(self.key, field, increment)
+
+    def hmget(self, fields):
+        return self.db.hmget(self.key, fields)
+
+    def hmset(self, mapping):
+        """
+        """
+        return self.db.hmset(self.key, mapping)
+
+    keys = hkeys
+    values = hvals
+    _get_dict = hgetall
+    __getitem__ = hget
+    __setitem__ = hset
+    __delitem__ = hdel
+    __len__ = hlen
+    __contains__ = hexists
     dict = property(_get_dict, _set_dict)
-
-
-    DELEGATEABLE_METHODS = ('hlen', 'hset', 'hdel', 'hkeys',
-            'hgetall', 'hvals', 'hget', 'hexists', 'hincrby',
-            'hmget', 'hmset')
