@@ -2,6 +2,7 @@ import unittest
 import redisco
 from redisco import containers as cont
 
+
 class SetTestCase(unittest.TestCase):
     def setUp(self):
         self.client = redisco.get_client()
@@ -272,7 +273,7 @@ class ListTestCase(unittest.TestCase):
         # slice
         alpha.extend(['C', 'D', 'E'])
         self.assertEqual(['A', 'B', 'C', 'D', 'E'], alpha[:])
-        self.assertEqual(['B', 'C'], alpha[1:2])
+        self.assertEqual(['B', 'C'], alpha[1:3])
 
         alpha.reverse()
         self.assertEqual(['E', 'D', 'C', 'B', 'A'], list(alpha))
@@ -305,10 +306,8 @@ class ListTestCase(unittest.TestCase):
                 self.assertTrue(v not in b.members)
 
         self.assertEqual(b_snap, a.members)
-        
 
-
-    def test_delegateable_methods(self):
+    def test_native_methods(self):
         l = cont.List('mylist')
         self.assertEqual([], l.lrange(0, -1))
         l.rpush('b')
@@ -371,7 +370,7 @@ class TypedListTestCase(unittest.TestCase):
                 self.assertEquals(iamteam, clayg.friend)
             else:
                 # this if failing for some reason ???
-                #self.assertEquals(person.friend, clayg) 
+                #self.assertEquals(person.friend, clayg)
                 pass
 
 

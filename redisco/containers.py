@@ -49,11 +49,13 @@ class Set(Container):
         self.db.sadd(self.key, value)
 
     def srem(self, value):
-        return self.db.srem(self.key, value)
+        removed = self.db.srem(self.key, value)
+        if not removed:
+            raise KeyError('%s not present in set' % value)
 
     def spop(self):
         """Remove and return (pop) a random element from the Set."""
-        return self.db.spop()
+        return self.db.spop(self.key)
 
     def discard(self, value):
         """Remove element elem from the set if it is present."""
@@ -62,7 +64,6 @@ class Set(Container):
     def __repr__(self):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
                 self.members)
-
 
     def isdisjoint(self, other):
         """Return True if the set has no elements in common with other."""
@@ -100,26 +101,28 @@ class Set(Container):
         """Test whether the set is a true superset of other."""
         return self >= other and self != other
 
-
     # SET Operations
     def union(self, key, *others):
+        if not isinstance(key, str) and not isinstance(key, unicode):
+            raise ValueError("Expect a (unicode) string as key")
+        key = unicode(key)
         """Return a new set with elements from the set and all others."""
-        if not isinstance(key, str):
-            raise ValueError("String expected.")
         self.db.sunionstore(key, [self.key] + [o.key for o in others])
         return Set(key)
 
     def intersection(self, key, *others):
+        if not isinstance(key, str) and not isinstance(key, unicode):
+            raise ValueError("Expect a (unicode) string as key")
+        key = unicode(key)
         """Return a new set with elements common to the set and all others."""
-        if not isinstance(key, str):
-            raise ValueError("String expected.")
         self.db.sinterstore(key, [self.key] + [o.key for o in others])
         return Set(key)
 
     def difference(self, key, *others):
+        if not isinstance(key, str) and not isinstance(key, unicode):
+            raise ValueError("Expect a (unicode) string as key")
+        key = unicode(key)
         """Return a new set with elements in the set that are not in the others."""
-        if not isinstance(key, str):
-            raise ValueError("String expected.")
         self.db.sdiffstore(key, [self.key] + [o.key for o in others])
         return Set(key)
 
@@ -191,11 +194,14 @@ class Set(Container):
     def sismember(self, value):
         return self.db.sismember(self.key, value)
 
+    def smembers(self):
+        return self.db.smembers(self.key)
+
     def srandmember(self):
         return self.db.srandmember(self.key)
 
-
     add = sadd
+    pop = spop
     remove = srem
     __contains__ = sismember
     __len__ = scard
@@ -211,14 +217,12 @@ class List(Container):
     def llen(self):
         return self.db.llen(self.key)
 
-    __len__ = llen
-
     def __getitem__(self, index):
         if isinstance(index, int):
             return self.lindex(index)
         elif isinstance(index, slice):
             indices = index.indices(len(self))
-            return self.lrange(indices[0], indices[1])
+            return self.lrange(indices[0], indices[1] - 1)
         else:
             raise TypeError
 
@@ -229,7 +233,7 @@ class List(Container):
         return self.db.lrange(self.key, start, stop)
 
     def lpush(self, value):
-        return self.lpush(self.key, value)
+        return self.db.lpush(self.key, value)
 
     def rpush(self, value):
         return self.db.rpush(self.key, value)
@@ -283,7 +287,7 @@ class List(Container):
     def lindex(self, value):
         return self.db.lindex(self.key, value)
 
-    def lset(self, value=0, index=0):
+    def lset(self, index, value=0):
         return self.db.lset(self.key, index, value)
 
     def __iter__(self):
@@ -293,7 +297,11 @@ class List(Container):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
                 self.members)
 
-
+    __len__ = llen
+    remove = lrem
+    trim = ltrim
+    shift = lpop
+    unshift = lpush
     pop = rpop
     pop_onto = rpoplpush
     push = rpush
@@ -475,8 +483,8 @@ class SortedSet(Container):
         return self.zrangebyscore(min, max,
                 start=offset, num=limit)
 
-    def zadd(self, value):
-        return self.db.zadd(self.key, value)
+    def zadd(self, member, value=1):
+        return self.db.zadd(self.key, member, value)
 
     def zrem(self, value):
         return self.db.zrem(self.key, value)
@@ -490,11 +498,11 @@ class SortedSet(Container):
     def zrange(self, start, stop, withscores=False):
         return self.db.zrange(self.key, start, stop, withscores=withscores)
 
-    def zrevrange(self, start, stop, withscores=False):
-        return self.db.zrevrange(self.key, start, stop, withscores=withscores)
+    def zrevrange(self, start, end, **kwargs):
+        return self.db.zrevrange(self.key, start, end, **kwargs)
 
-    def zrangebyscore(self, start, stop, withscores=False):
-        return self.db.zrangebyscore(self.key, start, stop, withscores=withscores)
+    def zrangebyscore(self, min, max, **kwargs):
+        return self.db.zrangebyscore(self.key, min, max, **kwargs)
 
     def zcard(self):
         return self.db.zcard(self.key)
@@ -511,7 +519,9 @@ class SortedSet(Container):
     def zrank(self, value):
         return self.db.zrank(self.key, value)
 
-    eq = zrangebyscore
+    def eq(self, value):
+        return self.zrangebyscore(value, value)
+
     __len__ = zcard
     revrank = zrevrank
     score = zscore
