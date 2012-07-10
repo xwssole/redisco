@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 """
 Defines the fields that can be added to redisco models.
 """
@@ -130,12 +130,12 @@ class CharField(Attribute):
             super(CharField, self).validate(instance)
         except FieldValidationError as err:
             errors.extend(err.errors)
-        
+
         val = getattr(instance, self.name)
-          
+
         if val and len(val) > self.max_length:
             errors.append((self.name, 'exceeds max length'))
-        
+
         if errors:
             raise FieldValidationError(errors)
 
@@ -231,21 +231,19 @@ class DateField(Attribute):
     def typecast_for_read(self, value):
         try:
             # We load as if it is UTC time
-            dt = datetime.fromtimestamp(float(value), tzutc())
+            dt = date.fromtimestamp(float(value))
             # And assign (ie: not convert) the UTC TimeZone
             return dt
         except TypeError, ValueError:
             return None
 
     def typecast_for_storage(self, value):
-        if not isinstance(value, datetime):
-            raise TypeError("%s should be datetime object, and not a %s" %
+        if not isinstance(value, date):
+            raise TypeError("%s should be date object, and not a %s" %
                     (self.name, type(value)))
         if value is None:
             return None
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=tzlocal())
-        return "%d" % float(timegm(value.utctimetuple()))
+        return "%d" % float(timegm(value.timetuple()))
 
     def value_type(self):
         return date
@@ -386,7 +384,7 @@ class ReferenceField(object):
 
     @property
     def related_name(self):
-        return self._related_name 
+        return self._related_name
 
     def validate(self, instance):
         val = getattr(instance, self.name)
