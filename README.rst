@@ -11,7 +11,8 @@ It is built on top of redis-py_. It includes container classes that allow
 easier access to Redis sets, lists, and sorted sets.
 
 
-[![Build Status](https://secure.travis-ci.org/kiddouk/redisco.png?branch=master)](http://travis-ci.org/kiddouk/redisco)
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=master
+
 
 Installation
 ------------
