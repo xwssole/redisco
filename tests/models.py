@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
 from threading import Thread
-import base64
 import redis
 import redisco
 import unittest
@@ -106,7 +105,6 @@ class ModelTestCase(RediscoTestCase):
         self.assertEqual(False, u.disliked)
         self.assertEqual(199, u.views)
 
-
     def test_getitem(self):
         person1 = Person(first_name="Granny", last_name="Goose")
         person1.save()
@@ -135,10 +133,9 @@ class ModelTestCase(RediscoTestCase):
         key = person.key()
         ckey = Person._key
 
-        index = 'Person:first_name:%s' % base64.b64encode("Granny").replace("\n", "")
+        index = 'Person:first_name:%s' % "Granny"
         self.assertTrue(index in db.smembers(key['_indices']))
         self.assertTrue("1" in db.smembers(index))
-
 
     def test_delete(self):
         Person.objects.create(first_name="Granny", last_name="Goose")
@@ -167,7 +164,6 @@ class ModelTestCase(RediscoTestCase):
 
         self.assertEqual(0, self.client.zcard("Event:created_on"))
 
-
     def test_filter(self):
         Person.objects.create(first_name="Granny", last_name="Goose")
         Person.objects.create(first_name="Clark", last_name="Kent")
@@ -185,7 +181,6 @@ class ModelTestCase(RediscoTestCase):
         persons = Person.objects.filter(full_name="Granny Mommy")
         self.assertEqual(1, len(persons))
         self.assertEqual("Granny Mommy", persons[0].full_name())
-
 
     def test_exclude(self):
         Person.objects.create(first_name="Granny", last_name="Goose")
@@ -467,7 +462,6 @@ class ModelTestCase(RediscoTestCase):
 
         t = Tweet.objects.get_by_id(t.id)
         self.assertEqual(14782201061, t.status_id)
-
 
     def test_slicing(self):
         Person.objects.create(first_name="Granny", last_name="Goose")
