@@ -476,10 +476,10 @@ class SortedSet(Container):
                 start=offset, num=limit)
 
     def zadd(self, value):
-        return self.db.zadd(value)
+        return self.db.zadd(self.key, value)
 
     def zrem(self, value):
-        return self.db.zrem(value)
+        return self.db.zrem(self.key, value)
 
     def zincrby(self, att, value=1):
         return self.db.zincrby(self.key, value, att)
@@ -488,28 +488,28 @@ class SortedSet(Container):
         return self.db.zrevrank(self.key, member)
 
     def zrange(self, start, stop, withscores=False):
-        return self.db.zrange(start, stop, withscores=withscores)
+        return self.db.zrange(self.key, start, stop, withscores=withscores)
 
     def zrevrange(self, start, stop, withscores=False):
-        return self.db.zrevrange(start, stop, withscores=withscores)
+        return self.db.zrevrange(self.key, start, stop, withscores=withscores)
 
     def zrangebyscore(self, start, stop, withscores=False):
-        return self.db.zrangebyscore(start, stop, withscores=withscores)
+        return self.db.zrangebyscore(self.key, start, stop, withscores=withscores)
 
     def zcard(self):
-        return self.db.zcard()
+        return self.db.zcard(self.key)
 
     def zscore(self, value):
-        return self.db.zscore(value)
+        return self.db.zscore(self.key, value)
 
     def zremrangebyrank(self, start, stop):
-        return self.db.zremrangebyrank(start, stop)
+        return self.db.zremrangebyrank(self.key, start, stop)
 
     def zremrangebyscore(self, min_value, max_value):
-        return self.db.zremrangebyscore(min_value, max_value)
+        return self.db.zremrangebyscore(self.key, min_value, max_value)
 
     def zrank(self, value):
-        return self.db.zrank(self, value)
+        return self.db.zrank(self.key, value)
 
     eq = zrangebyscore
     __len__ = zcard
