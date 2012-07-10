@@ -217,6 +217,8 @@ class List(Container):
     def llen(self):
         return self.db.llen(self.key)
 
+    __len__ = llen
+
     def __getitem__(self, index):
         if isinstance(index, int):
             return self.lindex(index)

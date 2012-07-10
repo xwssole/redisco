@@ -39,7 +39,7 @@ t = timeit.Timer('create_events()', 'from __main__ import create_events')
 display_results(t.repeat(repeat=1, number=5000), 'create_events')
 
 t = timeit.Timer('find_events()', 'from __main__ import find_events')
-display_results(t.repeat(repeat=3, number=5000), 'find_events')
+display_results(t.repeat(repeat=1, number=5000), 'find_events')
 
 t = timeit.Timer('load_events()', 'from __main__ import load_events')
 display_results(t.repeat(repeat=1, number=5000), 'load_events')
