@@ -161,9 +161,8 @@ class ModelSet(Set):
         if self._exclusions:
             s = self._add_set_exclusions(s)
         n = self._order(s.key)
-        self._cached_set = list(n)
-        for key in filter(lambda key: key != self.key, self._expire_or_delete):
-            del self.db[key]
+        self._cached_set = n
+        self.db.delete(filter(lambda key: key != self.key, self._expire_or_delete))
         return self._cached_set
 
     def _add_set_filter(self, s):
@@ -274,7 +273,7 @@ class ModelSet(Set):
 
     def _get_item_with_id(self, id):
         instance = self.model_class()
-        instance._id = str(id)
+        instance.id = str(id)
         return instance
 
     def _build_key_from_filter_item(self, index, value):
