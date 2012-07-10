@@ -12,7 +12,7 @@ def load_events():
 
 
 def find_events():
-    Event.objects.filter(name="Redis Meetup").first()
+    Event.objects.filter(name="Redis Meetup", location="London").first()
 
 
 def display_results(results, name):
@@ -28,7 +28,7 @@ for x in xrange(0, 5000):
     """
     cProfile.run(stmt, "b33f.prof")
     p = pstats.Stats("b33f.prof")
-    p.strip_dirs().sort_stats('time').print_stats(20)
+    p.strip_dirs().sort_stats('cumulative').print_stats(20)
     
 
 
@@ -39,11 +39,10 @@ Event(name="Redis Meetup 1", location="London").save()
 t = timeit.Timer('create_events()', 'from __main__ import create_events')
 display_results(t.repeat(repeat=1, number=5000), 'create_events')
 
-profile()
-
 t = timeit.Timer('find_events()', 'from __main__ import find_events')
 display_results(t.repeat(repeat=1, number=5000), 'find_events')
 
 t = timeit.Timer('load_events()', 'from __main__ import load_events')
 display_results(t.repeat(repeat=1, number=5000), 'load_events')
+
 
