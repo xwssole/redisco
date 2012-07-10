@@ -8,6 +8,7 @@ import unittest
 from datetime import date
 from redisco import models
 from redisco.models.base import Mutex
+from dateutil.tz import tzlocal
 
 class Person(models.Model):
     first_name = models.CharField()
@@ -838,7 +839,7 @@ class DateTimeFieldTestCase(RediscoTestCase):
 
     def test_basic(self):
         from datetime import datetime
-        n = datetime(2009, 12, 31)
+        n = datetime(2009, 12, 31).replace(tzinfo=tzlocal())
         class Post(models.Model):
             title = models.CharField()
             date_posted = models.DateTimeField()
