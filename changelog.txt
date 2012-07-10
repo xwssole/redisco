@@ -1,6 +1,14 @@
 
 version 0.2.0
 -------------
+Warning : This version may break your previous installation.
+I have updated the key storage process. It means that your indexes and uniques
+and alike will not be compatible. But Fear no more, if you fetch your objects
+(get_by_id) and save them again, everything will be back to normal.
+
+You may want to delete your old keys
+
+
 Lot of changes :
 * DateTime objects are now TimeZone aware. They will store time in UTC. If you
 don't specify any TZ, your local timezone will be assumed.
