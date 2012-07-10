@@ -488,7 +488,7 @@ class SortedSet(Container):
         return self.db.zrevrank(self.key, member)
 
     def zrange(self, start, stop, withscores=False):
-        return self.db.zrange(start, stop, withscores=withscore)
+        return self.db.zrange(start, stop, withscores=withscores)
 
     def zrevrange(self, start, stop, withscores=False):
         return self.db.zrevrange(start, stop, withscores=withscores)
