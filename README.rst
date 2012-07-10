@@ -10,6 +10,9 @@ Ohm_ and its design and code are loosely based on Ohm and the Django ORM.
 It is built on top of redis-py_. It includes container classes that allow
 easier access to Redis sets, lists, and sorted sets.
 
+
+[![Build Status](https://secure.travis-ci.org/kiddouk/redisco.png?branch=master)](http://travis-ci.org/kiddouk/redisco)
+
 Installation
 ------------
 Redisco requires redis-py 2.0.0 so get it first.
