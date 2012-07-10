@@ -232,7 +232,7 @@ class List(Container):
         return self.lpush(self.key, value)
 
     def rpush(self, value):
-        return self.rpush(self.key, value)
+        return self.db.rpush(self.key, value)
 
     def extend(self, iterable):
         """Extend list by appending elements from the iterable."""
