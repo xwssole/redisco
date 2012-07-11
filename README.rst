@@ -28,7 +28,7 @@ Which version should I consider ?
 
 - v0.1
 
-.. image:: https://secure.travis-ci.org/redisco/redisco.png?branch=0.1
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=0.1
 If you want something that is compatible with the original project developed by
 you should consider v0.1. It works.
 
