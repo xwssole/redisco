@@ -11,9 +11,6 @@ It is built on top of redis-py_. It includes container classes that allow
 easier access to Redis sets, lists, and sorted sets.
 
 
-.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=master
-
-
 Installation
 ------------
 Redisco requires redis-py 2.0.0 so get it first.
@@ -31,14 +28,21 @@ Which version should I consider ?
 
 - v0.1
 
+.. image:: https://secure.travis-ci.org/redisco/redisco.png?branch=0.1
 If you want something that is compatible with the original project developed by
 you should consider v0.1. It works.
 
 - v0.2
 
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=0.2
 If you are adventurous and want to try a version that is going closer to Ohm
 project you should consider v0.2. Warning, your indexing keys will be broken
 (if you are planning to migrate).
+
+- master
+
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=master
+Well, expect things to be broken. Really broken.
 
 
 Models
