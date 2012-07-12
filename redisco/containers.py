@@ -46,12 +46,10 @@ class Set(Container):
 
     def sadd(self, value):
         """Add the specified member to the Set."""
-        self.db.sadd(self.key, value)
+        return self.db.sadd(self.key, value)
 
     def srem(self, value):
-        removed = self.db.srem(self.key, value)
-        if not removed:
-            raise KeyError('%s not present in set' % value)
+        return self.db.srem(self.key, value)
 
     def spop(self):
         """Remove and return (pop) a random element from the Set."""
