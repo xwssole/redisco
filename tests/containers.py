@@ -20,7 +20,6 @@ class SetTestCase(unittest.TestCase):
         # remove
         fruits.discard('apples')
         self.assertEqual(set(['oranges']), fruits.all())
-        self.assertRaises(KeyError, fruits.remove, 'apples')
 
         # in
         self.assertTrue('oranges' in fruits)
