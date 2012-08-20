@@ -347,13 +347,21 @@ class ReferenceField(object):
         self.default = default
 
     def __set__(self, instance, value):
+        """
+        Will set the referenced object unless None is provided
+        which will simply remove the reference
+        """
         if not isinstance(value, self.value_type()) and \
                 value is not None:
             raise TypeError
         # remove the cached value from the instance
         if hasattr(instance, '_' + self.name):
             delattr(instance, '_' + self.name)
-        setattr(instance, self.attname, value.id)
+        # Remove the attribute_id reference
+        setattr(instance, self.attname, None)
+        # Set it to the new value if any.
+        if value is not None:
+            setattr(instance, self.attname, value.id)
 
     def __get__(self, instance, owner):
         try:
