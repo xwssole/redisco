@@ -87,6 +87,9 @@ class Set(Container):
         else:
             return False
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def issuperset(self, other):
         """Test whether every element in other is in the set."""
         return self >= other
