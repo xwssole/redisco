@@ -220,7 +220,7 @@ Sets
     set(['apple', 'blackberries', 'strawberries', 'orange', 'tomatoes', 'bananas'])
     >>> s.remove('apple', 'orange')
     True
-    >>> set(['strawberries', 'bananas', 'tomatoes', 'blackberries'])
+    set(['strawberries', 'bananas', 'tomatoes', 'blackberries'])
     >>> s.remove(['bananas', 'blackberries'])
     True
     >> s.members
@@ -235,10 +235,8 @@ Sets
     set(['kiwi', 'orange', 'guava', 'apple'])
 
 Lists
-    >>> import redis
     >>> from redisco.containers import List
     >>> l = List('alpha')
-    >>> l.append('a')
     >>> l.append('a')
     >>> l.append(['b', 'c'])
     >>> l.append('d', 'e', 'f')
