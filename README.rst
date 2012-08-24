@@ -214,8 +214,17 @@ Sets
     >>> s = Set('myset')
     >>> s.add('apple')
     >>> s.add('orange')
+    >>> s.add('bananas', 'tomatoes')
+    >>> s.add(['blackberries', 'strawberries'])
     >>> s.members
-    set(['orange', 'apple'])
+    set(['apple', 'blackberries', 'strawberries', 'orange', 'tomatoes', 'bananas'])
+    >>> s.remove('apple', 'orange')
+    True
+    set(['strawberries', 'bananas', 'tomatoes', 'blackberries'])
+    >>> s.remove(['bananas', 'blackberries'])
+    True
+    >> s.members
+    set(['strawberries', 'bananas', 'tomatoes'])
     >>> t = Set('nset')
     >>> t.add('kiwi')
     >>> t.add('guava')
@@ -226,22 +235,21 @@ Sets
     set(['kiwi', 'orange', 'guava', 'apple'])
 
 Lists
-    >>> import redis
     >>> from redisco.containers import List
     >>> l = List('alpha')
     >>> l.append('a')
-    >>> l.append('b')
-    >>> l.append('c')
+    >>> l.append(['b', 'c'])
+    >>> l.append('d', 'e', 'f')
     >>> 'a' in l
     True
     >>> 'd' in l
     False
     >>> len(l)
-    3
+    6
     >>> l.index('b')
     1
     >>> l.members
-    ['a', 'b', 'c']
+    ['a', 'b', 'c', 'd', 'e', 'f']
 
 
 Sorted Sets
@@ -258,12 +266,12 @@ Sorted Sets
     2
     >>> zset[1]
     'a'
-    >>> zset.add('f', 200)
+    >>> zset.add({'f' : 200, 'e' : 201})
     >>> zset.members
-    ['d', 'a', 'b', 'c', 'f']
+    ['d', 'a', 'b', 'c', 'f', 'e']
     >>> zset.add('d', 99)
     >>> zset.members
-    ['a', 'b', 'c', 'd', 'f']
+    ['a', 'b', 'c', 'd', 'f', 'e']
 
 
 Dicts/Hashes
