@@ -398,6 +398,15 @@ class ModelTestCase(RediscoTestCase):
         self.assertFalse(nin2.is_valid())
         self.assertTrue(('age', 'must be below 10') in nin2.errors)
 
+    def test_falsy_value_type_validation(self):
+        class Person(models.Model):
+            age = models.IntegerField()
+        for val in ('', {}, []):
+            p = Person(age=val)
+            self.assertFalse(p.is_valid())
+            self.assertEqual([('age', 'bad type')], p.errors)
+
+
     def test_load_object_from_key(self):
         class Schedule(models.Model):
             att = models.CharField()

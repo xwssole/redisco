@@ -78,7 +78,7 @@ class Attribute(object):
         val = getattr(instance, self.name)
         errors = []
         # type_validation
-        if val and not isinstance(val, self.acceptable_types()):
+        if val is not None and not isinstance(val, self.acceptable_types()):
             errors.append((self.name, 'bad type',))
         # validate first standard stuff
         if self.required:
