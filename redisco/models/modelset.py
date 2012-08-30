@@ -155,14 +155,12 @@ class ModelSet(Set):
             self._cached_set = self._add_zfilters()
             return self._cached_set
         s = Set(self.key)
-        self._expire_or_delete = set()
         if self._filters:
             s = self._add_set_filter(s)
         if self._exclusions:
             s = self._add_set_exclusions(s)
         n = self._order(s.key)
         self._cached_set = n
-        self.db.delete(filter(lambda key: key != self.key, self._expire_or_delete))
         return self._cached_set
 
     def _add_set_filter(self, s):
@@ -176,8 +174,9 @@ class ModelSet(Set):
             indices.append(index)
         new_set_key = "~%s.%s" % ("+".join([self.key] + indices), id(self))
         s.intersection(new_set_key, *[Set(n) for n in indices])
-        self._expire_or_delete.add(new_set_key)
-        return Set(new_set_key)
+        new_set = Set(new_set_key)
+        new_set.set_expire()
+        return new_set
 
     def _add_set_exclusions(self, s):
         indices = []
@@ -190,8 +189,9 @@ class ModelSet(Set):
             indices.append(index)
         new_set_key = "~%s.%s" % ("-".join([self.key] + indices), id(self))
         s.difference(new_set_key, *[Set(n) for n in indices])
-        self._expire_or_delete.add(new_set_key)
-        return Set(new_set_key)
+        new_set = Set(new_set_key)
+        new_set.set_expire()
+        return new_set
 
     def _add_zfilters(self):
         k, v = self._zfilters[0].items()[0]
@@ -244,9 +244,10 @@ class ModelSet(Set):
                          start=start,
                          num=num,
                          desc=desc)
-            self._expire_or_delete.add(old_set_key)
-            self._expire_or_delete.add(new_set_key)
-            return List(new_set_key)
+            Set(old_set_key).set_expire()
+            new_list = List(new_set_key)
+            new_list.set_expire()
+            return new_list
 
     def _set_without_ordering(self, skey):
         # sort by id
@@ -257,9 +258,10 @@ class ModelSet(Set):
                      store=new_set_key,
                      start=start,
                      num=num)
-        self._expire_or_delete.add(old_set_key)
-        self._expire_or_delete.add(new_set_key)
-        return List(new_set_key)
+        Set(old_set_key).set_expire()
+        new_list = List(new_set_key)
+        new_list.set_expire()
+        return new_list
 
     def _get_limit_and_offset(self):
         if (self._limit is not None and self._offset is None) or \

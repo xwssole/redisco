@@ -72,7 +72,7 @@ class ModelTestCase(RediscoTestCase):
                 repr(person1))
 
         self.assert_(person1.save())
-        self.assertEqual("<Person:1 {'first_name': 'Granny', 'last_name': 'Goose'}>",
+        self.assertEqual("<Person:1 {'first_name': 'Granny', 'last_name': 'Goose', 'id': '1'}>",
                 repr(person1))
 
     def test_update(self):
@@ -397,6 +397,15 @@ class ModelTestCase(RediscoTestCase):
         nin2 = Ninja(age=10)
         self.assertFalse(nin2.is_valid())
         self.assertTrue(('age', 'must be below 10') in nin2.errors)
+
+    def test_falsy_value_type_validation(self):
+        class Person(models.Model):
+            age = models.IntegerField()
+        for val in ('', {}, []):
+            p = Person(age=val)
+            self.assertFalse(p.is_valid())
+            self.assertEqual([('age', 'bad type')], p.errors)
+
 
     def test_load_object_from_key(self):
         class Schedule(models.Model):

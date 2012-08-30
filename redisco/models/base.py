@@ -302,6 +302,8 @@ class Model(object):
             h[k] = getattr(self, k)
         for k in self.references.keys():
             h[k] = getattr(self, k)
+        if 'id' not in self.attributes.keys() and not self.is_new():
+            h['id'] = self.id
         return h
 
 

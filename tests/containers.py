@@ -15,10 +15,16 @@ class SetTestCase(unittest.TestCase):
         fruits = cont.Set(key='fruits')
         fruits.add('apples')
         fruits.add('oranges')
-        self.assertEqual(set(['apples', 'oranges']), fruits.all())
+        fruits.add('bananas', 'tomatoes')
+        fruits.add(['strawberries', 'blackberries'])
+
+        self.assertEqual(set(['apples', 'oranges', 'bananas', 'tomatoes', 'strawberries', 'blackberries']), fruits.all())
 
         # remove
         fruits.discard('apples')
+        fruits.discard('bananas', 'blackberries')
+        fruits.discard(['tomatoes', 'strawberries'])
+
         self.assertEqual(set(['oranges']), fruits.all())
 
         # in
@@ -221,9 +227,13 @@ class ListTestCase(unittest.TestCase):
         # append
         alpha.append('a')
         alpha.append('b')
+        alpha.append('c', 'd')
+        alpha.append(['e', 'f'])
+
+        self.assertEqual(['a', 'b', 'c', 'd', 'e', 'f'], alpha.all())
 
         # len
-        self.assertEqual(2, len(alpha))
+        self.assertEqual(6, len(alpha))
 
         num = cont.List('num', self.client)
         num.append('1')
@@ -231,9 +241,9 @@ class ListTestCase(unittest.TestCase):
 
         # extend and iter
         alpha.extend(num)
-        self.assertEqual(['a', 'b', '1', '2'], alpha.all())
+        self.assertEqual(['a', 'b', 'c', 'd', 'e', 'f', '1', '2'], alpha.all())
         alpha.extend(['3', '4'])
-        self.assertEqual(['a', 'b', '1', '2', '3', '4'], alpha.all())
+        self.assertEqual(['a', 'b', 'c', 'd', 'e', 'f', '1', '2', '3', '4'], alpha.all())
 
         # contains
         self.assertTrue('b' in alpha)
@@ -248,8 +258,11 @@ class ListTestCase(unittest.TestCase):
 
         # push and pop
         num.push('4')
-        self.assertEqual('4', num.pop())
-        self.assertEqual(['1', '2'], num.members)
+        num.push('a', 'b')
+        num.push(['c', 'd'])
+        self.assertEqual('d', num.pop())
+        self.assertEqual('c', num.pop())
+        self.assertEqual(['1', '2', '4', 'a' ,'b'], num.members)
 
         # trim
         alpha.trim(0, 1)
@@ -385,10 +398,8 @@ class SortedSetTestCase(unittest.TestCase):
         zorted = cont.SortedSet("Person:age")
         zorted.add("1", 29)
         zorted.add("2", 39)
-        zorted.add("3", '15')
-        zorted.add("4", 35)
-        zorted.add("5", 98)
-        zorted.add("6", 5)
+        zorted.add({"3" : '15', "4" : 35})
+        zorted.add({"5" : 98, "6" : 5})
         self.assertEqual(6, len(zorted))
         self.assertEqual(35, zorted.score("4"))
         self.assertEqual(0, zorted.rank("6"))

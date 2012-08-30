@@ -5,6 +5,14 @@ that persist directly in a Redis server.
 
 import collections
 from functools import partial
+from . import default_expire_time
+
+
+def _parse_values(values):
+    (_values,) = values if len(values) == 1 else (None,)
+    if _values and type(_values) == type([]):
+        return _values
+    return values
 
 
 class Container(object):
@@ -27,6 +35,11 @@ class Container(object):
         """Remove container from Redis database."""
         del self.db[self.key]
 
+    def set_expire(self, time=None):
+        if time is None:
+            time = default_expire_time
+        self.db.expire(self.key, time)
+
     @property
     def db(self):
         if self.pipeline:
@@ -44,20 +57,20 @@ class Container(object):
 class Set(Container):
     """A set stored in Redis."""
 
-    def sadd(self, value):
-        """Add the specified member to the Set."""
-        return self.db.sadd(self.key, value)
+    def sadd(self, *values):
+        """Add the specified members to the Set."""
+        return self.db.sadd(self.key, *_parse_values(values))
 
-    def srem(self, value):
-        return self.db.srem(self.key, value)
+    def srem(self, *values):
+        return self.db.srem(self.key, *_parse_values(values))
 
     def spop(self):
         """Remove and return (pop) a random element from the Set."""
         return self.db.spop(self.key)
 
-    def discard(self, value):
+    def discard(self, *values):
         """Remove element elem from the set if it is present."""
-        self.srem(value)
+        self.srem(*values)
 
     def __repr__(self):
         return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
@@ -86,6 +99,9 @@ class Set(Container):
             return self.members == other.members
         else:
             return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def issuperset(self, other):
         """Test whether every element in other is in the set."""
@@ -232,15 +248,15 @@ class List(Container):
     def lrange(self, start, stop):
         return self.db.lrange(self.key, start, stop)
 
-    def lpush(self, value):
-        return self.db.lpush(self.key, value)
+    def lpush(self, *values):
+        return self.db.lpush(self.key, *_parse_values(values))
 
-    def rpush(self, value):
-        return self.db.rpush(self.key, value)
+    def rpush(self, *values):
+        return self.db.rpush(self.key, *_parse_values(values))
 
     def extend(self, iterable):
         """Extend list by appending elements from the iterable."""
-        map(lambda i: self.rpush(i), iterable)
+        self.rpush(*[e for e in iterable])
 
     def count(self, value):
         """Return number of occurrences of value."""
@@ -306,8 +322,6 @@ class List(Container):
     pop_onto = rpoplpush
     push = rpush
     append = rpush
-
-
 
 
 class TypedList(object):
@@ -483,11 +497,18 @@ class SortedSet(Container):
         return self.zrangebyscore(min, max,
                 start=offset, num=limit)
 
-    def zadd(self, member, value=1):
-        return self.db.zadd(self.key, member, value)
+    def zadd(self, members, score=1):
+        _members = []
+        if type(members) != type({}):
+            _members = [members, score]
+        else:
+            for member, score in members.items():
+                _members += [member, score]
 
-    def zrem(self, value):
-        return self.db.zrem(self.key, value)
+        return self.db.zadd(self.key, *_members)
+
+    def zrem(self, *values):
+        return self.db.zrem(self.key, *_parse_values(values))
 
     def zincrby(self, att, value=1):
         return self.db.zincrby(self.key, value, att)
@@ -564,8 +585,8 @@ class Hash(Container, collections.MutableMapping):
     def hset(self, member, value):
         return self.db.hset(self.key, member, value)
 
-    def hdel(self, member):
-        return self.db.hdel(self.key, member)
+    def hdel(self, *members):
+        return self.db.hdel(self.key, *_parse_values(members))
 
     def hkeys(self):
         return self.db.hkeys(self.key)

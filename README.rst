@@ -11,9 +11,6 @@ It is built on top of redis-py_. It includes container classes that allow
 easier access to Redis sets, lists, and sorted sets.
 
 
-.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=master
-
-
 Installation
 ------------
 Redisco requires redis-py 2.0.0 so get it first.
@@ -23,6 +20,29 @@ Redisco requires redis-py 2.0.0 so get it first.
 Then install redisco.
 
     pip install redisco
+
+
+
+Which version should I consider ?
+---------------------------------
+
+- v0.1
+
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=0.1
+If you want something that is compatible with the original project developed by
+you should consider v0.1. It works.
+
+- v0.2
+
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=0.2
+If you are adventurous and want to try a version that is going closer to Ohm
+project you should consider v0.2. Warning, your indexing keys will be broken
+(if you are planning to migrate).
+
+- master
+
+.. image:: https://secure.travis-ci.org/kiddouk/redisco.png?branch=master
+Well, expect things to be broken. Really broken.
 
 
 Models
@@ -194,8 +214,17 @@ Sets
     >>> s = Set('myset')
     >>> s.add('apple')
     >>> s.add('orange')
+    >>> s.add('bananas', 'tomatoes')
+    >>> s.add(['blackberries', 'strawberries'])
     >>> s.members
-    set(['orange', 'apple'])
+    set(['apple', 'blackberries', 'strawberries', 'orange', 'tomatoes', 'bananas'])
+    >>> s.remove('apple', 'orange')
+    True
+    set(['strawberries', 'bananas', 'tomatoes', 'blackberries'])
+    >>> s.remove(['bananas', 'blackberries'])
+    True
+    >> s.members
+    set(['strawberries', 'bananas', 'tomatoes'])
     >>> t = Set('nset')
     >>> t.add('kiwi')
     >>> t.add('guava')
@@ -206,22 +235,21 @@ Sets
     set(['kiwi', 'orange', 'guava', 'apple'])
 
 Lists
-    >>> import redis
     >>> from redisco.containers import List
     >>> l = List('alpha')
     >>> l.append('a')
-    >>> l.append('b')
-    >>> l.append('c')
+    >>> l.append(['b', 'c'])
+    >>> l.append('d', 'e', 'f')
     >>> 'a' in l
     True
     >>> 'd' in l
     False
     >>> len(l)
-    3
+    6
     >>> l.index('b')
     1
     >>> l.members
-    ['a', 'b', 'c']
+    ['a', 'b', 'c', 'd', 'e', 'f']
 
 
 Sorted Sets
@@ -238,12 +266,12 @@ Sorted Sets
     2
     >>> zset[1]
     'a'
-    >>> zset.add('f', 200)
+    >>> zset.add({'f' : 200, 'e' : 201})
     >>> zset.members
-    ['d', 'a', 'b', 'c', 'f']
+    ['d', 'a', 'b', 'c', 'f', 'e']
     >>> zset.add('d', 99)
     >>> zset.members
-    ['a', 'b', 'c', 'd', 'f']
+    ['a', 'b', 'c', 'd', 'f', 'e']
 
 
 Dicts/Hashes
