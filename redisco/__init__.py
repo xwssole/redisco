@@ -27,5 +27,6 @@ def get_client():
 
 client = Client()
 connection = client.redis()
+default_expire_time = 60
 
 __all__ = ['connection_setup', 'get_client']

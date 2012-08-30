@@ -5,6 +5,7 @@ that persist directly in a Redis server.
 
 import collections
 from functools import partial
+from . import default_expire_time
 
 
 def _parse_values(values):
@@ -34,6 +35,11 @@ class Container(object):
         """Remove container from Redis database."""
         del self.db[self.key]
 
+    def set_expire(self, time=None):
+        if time is None:
+            time = default_expire_time
+        self.db.expire(self.key, time)
+
     @property
     def db(self):
         if self.pipeline:
@@ -54,7 +60,7 @@ class Set(Container):
     def sadd(self, *values):
         """Add the specified members to the Set."""
         return self.db.sadd(self.key, *_parse_values(values))
- 
+
     def srem(self, *values):
         return self.db.srem(self.key, *_parse_values(values))
 
@@ -498,7 +504,7 @@ class SortedSet(Container):
         else:
             for member, score in members.items():
                 _members += [member, score]
-                
+
         return self.db.zadd(self.key, *_members)
 
     def zrem(self, *values):
