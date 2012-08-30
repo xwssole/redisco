@@ -244,7 +244,8 @@ class ModelSet(Set):
                          start=start,
                          num=num,
                          desc=desc)
-            Set(old_set_key).set_expire()
+            if old_set_key != self.key:
+                Set(old_set_key).set_expire()
             new_list = List(new_set_key)
             new_list.set_expire()
             return new_list
@@ -258,7 +259,8 @@ class ModelSet(Set):
                      store=new_set_key,
                      start=start,
                      num=num)
-        Set(old_set_key).set_expire()
+        if old_set_key != self.key:
+            Set(old_set_key).set_expire()
         new_list = List(new_set_key)
         new_list.set_expire()
         return new_list
