@@ -23,6 +23,12 @@ Then install redisco.
 
 
 
+Documentation
+-------------
+The documentation is available ReadTheDocs_.
+.. _ReadTheDocs: https://redisco.readthedocs.org
+
+
 Which version should I consider ?
 ---------------------------------
 
