@@ -21,9 +21,9 @@ class SetTestCase(unittest.TestCase):
         self.assertEqual(set(['apples', 'oranges', 'bananas', 'tomatoes', 'strawberries', 'blackberries']), fruits.all())
 
         # remove
-        fruits.discard('apples')
-        fruits.discard('bananas', 'blackberries')
-        fruits.discard(['tomatoes', 'strawberries'])
+        fruits.remove('apples')
+        fruits.remove('bananas', 'blackberries')
+        fruits.remove(['tomatoes', 'strawberries'])
 
         self.assertEqual(set(['oranges']), fruits.all())
 
@@ -161,7 +161,7 @@ class SetTestCase(unittest.TestCase):
         s.srem('b')
         self.assertEqual('a', s.spop())
         s.sadd('a')
-        self.assert_('a' in s.smembers())
+        self.assert_('a' in s.members)
         s.sadd('b')
         self.assertEqual(2, s.scard())
         self.assert_(s.sismember('a'))
