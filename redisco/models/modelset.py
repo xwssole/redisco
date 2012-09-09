@@ -25,6 +25,9 @@ class ModelSet(Set):
     #################
 
     def __getitem__(self, index):
+        """
+        Will look in _set to get the id and simply return the instance of the model.
+        """
         if isinstance(index, slice):
             return map(lambda id: self._get_item_with_id(id), self._set[index])
         else:
@@ -388,6 +391,12 @@ class ModelSet(Set):
             return self._set_without_ordering(skey)
 
     def _set_with_ordering(self, skey):
+        """
+        Final call for finally ordering the looked-up collection.
+        The ordering will be done by Redis itself and stored as a temporary set.
+
+        :return: a Set of `id`
+        """
         num, start = self._get_limit_and_offset()
         old_set_key = skey
         for ordering, alpha in self._ordering:
@@ -412,6 +421,12 @@ class ModelSet(Set):
             return new_list
 
     def _set_without_ordering(self, skey):
+        """
+        Final call for "non-ordered" looked up.
+        We order by id anyway and this is done by redis (same as above).
+
+        :returns: A Set of `id`
+        """
         # sort by id
         num, start = self._get_limit_and_offset()
         old_set_key = skey
@@ -427,6 +442,9 @@ class ModelSet(Set):
         return new_list
 
     def _get_limit_and_offset(self):
+        """
+        Return the limit and offset of the looked up ids.
+        """
         if (self._limit is not None and self._offset is None) or \
                 (self._limit is None and self._offset is not None):
                     raise "Limit and offset must be specified"
@@ -437,17 +455,35 @@ class ModelSet(Set):
             return (self._limit, self._offset)
 
     def _get_item_with_id(self, id):
+        """
+        Fetch an object and return the instance. The real fetching is
+        done by assigning the id to the Instance. See ``Model`` class.
+        """
         instance = self.model_class()
         instance.id = str(id)
         return instance
 
     def _build_key_from_filter_item(self, index, value):
+        """
+        Build the keys from the filter so we can fetch the good keys
+        with the indices.
+        Example:
+            Foo.objects.filter(name='bar')
+            => 'Foo:name:bar'
+        """
         desc = self.model_class._attributes.get(index)
         if desc:
             value = desc.typecast_for_storage(value)
         return self.model_class._key[index][value]
 
     def _clone(self):
+        """
+        This function allows the chaining of lookup calls.
+        Example:
+            Foo.objects.filter().filter().exclude()...
+
+        :returns: a modelset instance with all the previous filters.
+        """
         klass = self.__class__
         c = klass(self.model_class)
         if self._filters:
