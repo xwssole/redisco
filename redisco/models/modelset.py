@@ -273,6 +273,11 @@ class ModelSet(Set):
 
     @property
     def _set(self):
+        """
+        This contains the list of ids that have been looked-up,
+        filtered and ordered. This set is build hen we first access
+        it and is cached for has long has the ModelSet exist.
+        """
         # For performance reasons, only one zfilter is allowed.
         if hasattr(self, '_cached_set'):
             return self._cached_set
@@ -289,6 +294,15 @@ class ModelSet(Set):
         return self._cached_set
 
     def _add_set_filter(self, s):
+        """
+        This function is the internal of the `filter` function.
+        It simply creates a new "intersection" of indexed keys (the filter) and
+        the previous filtered keys (if any).
+
+        .. Note:: This function uses the ``Set`` container class.
+
+        :return: the new Set
+        """
         indices = []
         for k, v in self._filters.iteritems():
             index = self._build_key_from_filter_item(k, v)
@@ -304,6 +318,15 @@ class ModelSet(Set):
         return new_set
 
     def _add_set_exclusions(self, s):
+        """
+        This function is the internals of the `filter` function.
+        It simply creates a new "difference" of indexed keys (the filter) and
+        the previous filtered keys (if any).
+
+        .. Note:: This function uses the ``Set`` container class.
+
+        :return: the new Set
+        """
         indices = []
         for k, v in self._exclusions.iteritems():
             index = self._build_key_from_filter_item(k, v)
@@ -319,6 +342,15 @@ class ModelSet(Set):
         return new_set
 
     def _add_zfilters(self):
+        """
+        This function is the internals of the zfilter function.
+        It will create a SortedSet and will compare the scores to
+        the value provided.
+
+        :return: a SortedSet with the ids.
+
+        """
+
         k, v = self._zfilters[0].items()[0]
         try:
             att, op = k.split('__')
@@ -346,6 +378,10 @@ class ModelSet(Set):
             return zset.between(min, max, limit, offset)
 
     def _order(self, skey):
+        """
+        This function does not job. It will only call the good
+        subfunction in case we want an ordering or not.
+        """
         if self._ordering:
             return self._set_with_ordering(skey)
         else:
