@@ -57,12 +57,48 @@ class ModelSet(Set):
     ##########################################
 
     def get_by_id(self, id):
+        """
+        Returns the object definied by ``id``.
+
+        :param id: the ``id`` of the objects to lookup.
+        :returns: The object instance or None if not found.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein")
+        >>> f.save()
+        True
+        >>> Foo.objects.get_by_id(f.id) == f
+        True
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         if (self._filters or self._exclusions or self._zfilters) and str(id) not in self._set:
             return
         if self.model_class.exists(id):
             return self._get_item_with_id(id)
 
     def first(self):
+        """
+        Return the first object of a collections.
+
+        :return: The object or Non if the lookup gives no result
+
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute()
+        ...
+        >>> f = Foo(name="toto")
+        >>> f.save()
+        True
+        >>> Foo.objects.filter(name="toto").first() # doctest: +ELLIPSIS
+        <Foo:...>
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         try:
             return self.limit(1).__getitem__(0)
         except IndexError:
@@ -74,6 +110,22 @@ class ModelSet(Set):
     #####################################
 
     def filter(self, **kwargs):
+        """
+        Filter a collection on criteria
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute()
+        ...
+        >>> Foo(name="toto").save()
+        True
+        >>> Foo(name="toto").save()
+        True
+        >>> Foo.objects.filter() # doctest: +ELLIPSIS
+        [<Foo:...>, <Foo:...>]
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         clone = self._clone()
         if not clone._filters:
             clone._filters = {}
@@ -81,6 +133,24 @@ class ModelSet(Set):
         return clone
 
     def exclude(self, **kwargs):
+        """
+        Exclude a collection within a lookup.
+
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    exclude_me = models.BooleanField()
+        ...
+        >>> Foo(name="Einstein").save()
+        True
+        >>> Foo(name="Edison", exclude_me=True).save()
+        True
+        >>> Foo.objects.exclude(exclude_me=True).first().name
+        u'Einstein'
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         clone = self._clone()
         if not clone._exclusions:
             clone._exclusions = {}
@@ -96,6 +166,27 @@ class ModelSet(Set):
 
     # this should only be called once
     def order(self, field):
+        """
+        Enable ordering in collections when doing a lookup.
+
+        .. Warning:: This should only be called once per lookup.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    exclude_me = models.BooleanField()
+        ...
+        >>> Foo(name="Abba").save()
+        True
+        >>> Foo(name="Zztop").save()
+        True
+        >>> Foo.objects.all().order("-name").first().name
+        u'Zztop'
+        >>> Foo.objects.all().order("name").first().name
+        u'Abba'
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         fname = field.lstrip('-')
         if fname not in self.model_class._indices:
             raise ValueError("Order parameter should be an indexed attribute.")
@@ -110,12 +201,29 @@ class ModelSet(Set):
         return clone
 
     def limit(self, n, offset=0):
+        """
+        Limit the size of the collection to *n* elements.
+        """
         clone = self._clone()
         clone._limit = n
         clone._offset = offset
         return clone
 
     def create(self, **kwargs):
+        """
+        Create an object of the class.
+
+        .. Note:: This is the same as creating an instance of the class and saving it.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute()
+        ...
+        >>> Foo.objects.create(name="Obama") # doctest: +ELLIPSIS
+        <Foo:...>
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         instance = self.model_class(**kwargs)
         if instance.save():
             return instance
@@ -123,9 +231,26 @@ class ModelSet(Set):
             return None
 
     def all(self):
+        """
+        Return all elements of the collection.
+        """
         return self._clone()
 
     def get_or_create(self, **kwargs):
+        """
+        Return an element of the collection or create it if necessary.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute()
+        ...
+        >>> new_obj = Foo.objects.get_or_create(name="Obama")
+        >>> get_obj = Foo.objects.get_or_create(name="Obama")
+        >>> new_obj == get_obj
+        True
+        >>> [f.delete() for f in Foo.objects.all()] # doctest: +ELLIPSIS
+        [...]
+        """
         opts = {}
         for k, v in kwargs.iteritems():
             if k in self.model_class._indices:

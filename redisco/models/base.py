@@ -19,7 +19,9 @@ ZINDEXABLE = (IntegerField, DateTimeField, DateField, FloatField)
 
 
 def _initialize_attributes(model_class, name, bases, attrs):
-    """Initialize the attributes of the model."""
+    """
+    Initialize the attributes of the model.
+    """
     model_class._attributes = {}
 
     # In case of inheritance, we also add the parent's
@@ -37,7 +39,8 @@ def _initialize_attributes(model_class, name, bases, attrs):
 
 
 def _initialize_referenced(model_class, attribute):
-    """Adds a property to the target of a reference field that
+    """
+    Adds a property to the target of a reference field that
     returns the list of associated objects.
     """
     # this should be a descriptor
@@ -56,7 +59,9 @@ def _initialize_referenced(model_class, attribute):
 
 
 def _initialize_lists(model_class, name, bases, attrs):
-    """Stores the list fields descriptors of a model."""
+    """
+    Stores the list fields descriptors of a model.
+    """
     model_class._lists = {}
     for parent in bases:
         if not isinstance(parent, ModelBase):
@@ -71,7 +76,9 @@ def _initialize_lists(model_class, name, bases, attrs):
 
 
 def _initialize_references(model_class, name, bases, attrs):
-    """Stores the list of reference field descriptors of a model."""
+    """
+    Stores the list of reference field descriptors of a model.
+    """
     model_class._references = {}
     h = {}
     deferred = []
@@ -102,7 +109,9 @@ def _initialize_references(model_class, name, bases, attrs):
 
 
 def _initialize_indices(model_class, name, bases, attrs):
-    """Stores the list of indexed attributes."""
+    """
+    Stores the list of indexed attributes.
+    """
     model_class._indices = []
     for parent in bases:
         if not isinstance(parent, ModelBase):
@@ -122,7 +131,9 @@ def _initialize_indices(model_class, name, bases, attrs):
 
 
 def _initialize_counters(model_class, name, bases, attrs):
-    """Stores the list of counter fields."""
+    """
+    Stores the list of counter fields.
+    """
     model_class._counters = []
 
     for parent in bases:
@@ -140,12 +151,16 @@ def _initialize_counters(model_class, name, bases, attrs):
 
 
 def _initialize_key(model_class, name):
-    """Initializes the key of the model."""
+    """
+    Initializes the key of the model.
+    """
     model_class._key = Key(model_class._meta['key'] or name)
 
 
 def _initialize_manager(model_class):
-    """Initializes the objects manager attribute of the model."""
+    """
+    Initializes the objects manager attribute of the model.
+    """
     model_class.objects = ManagerDescriptor(Manager(model_class))
 
 
@@ -154,12 +169,13 @@ class ModelOptions(object):
 
     Example:
 
-        class Person(models.Model):
-            name = models.Attribute()
-
-            class Meta:
-                indices = ('full_name',)
-                db = redis.Redis(host='localhost', port=29909)
+    >>> from redisco import models
+    >>> import redis
+    >>> class Person(models.Model):
+    ...     name = models.Attribute()
+    ...     class Meta:
+    ...         indices = ('full_name',)
+    ...         db = redis.Redis(host='localhost', port=29909)
 
     """
     def __init__(self, meta):
@@ -178,7 +194,9 @@ class ModelOptions(object):
 _deferred_refs = []
 
 class ModelBase(type):
-    """Metaclass of the Model."""
+    """
+    Metaclass of the Model.
+    """
 
     def __init__(cls, name, bases, attrs):
         super(ModelBase, cls).__init__(name, bases, attrs)
@@ -207,10 +225,28 @@ class Model(object):
         self.update_attributes(**kwargs)
 
     def is_valid(self):
-        """Returns True if all the fields are valid.
+        """
+        Returns True if all the fields are valid.
 
         It first validates the fields (required, unique, etc.)
         and then calls the validate method.
+
+        >>> from redisco import models
+        >>> def validate_me(field, value):
+        ...     if value == "Invalid":
+        ...         return (field, "Invalid value")
+        ...
+        >>> class Foo(models.Model):
+        ...     bar = models.Attribute(validator=validate_me)
+        ...
+        >>> f = Foo()
+        >>> f.bar = "Invalid"
+        >>> f.save()
+        ['bar', 'Invalid value']
+
+        .. WARNING::
+            You may want to use ``validate`` described below to validate your model
+
         """
         self._errors = []
         for field in self.fields:
@@ -222,24 +258,40 @@ class Model(object):
         return not bool(self._errors)
 
     def validate(self):
-        """Overriden in the model class.
-
-        Do custom validation here. Add tuples to self._errors.
+        """
+        Overriden in the model class.
+        The function is here to help you validate your model. The validation should add errors to self._errors.
 
         Example:
 
-            class Person(Model):
-                name = Attribute(required=True)
-
-                def validate(self):
-                    if name == 'Nemo':
-                        self._errors.append(('name', 'cannot be Nemo'))
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute(required=True)
+        ...     def validate(self):
+        ...         if self.name == "Invalid":
+        ...             self._errors.append(('name', 'cannot be Invalid'))
+        ...
+        >>> f = Foo(name="Invalid")
+        >>> f.save()
+        [('name', 'cannot be Invalid')]
 
         """
         pass
 
     def update_attributes(self, **kwargs):
-        """Updates the attributes of the model."""
+        """
+        Updates the attributes of the model.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    title = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein", title="Mr.")
+        >>> f.update_attributes(name="Tesla")
+        >>> f.name
+        'Tesla'
+        """
         attrs = self.attributes.values() + self.lists.values() \
                 + self.references.values()
         for att in attrs:
@@ -247,7 +299,22 @@ class Model(object):
                 att.__set__(self, kwargs[att.name])
 
     def save(self):
-        """Saves the instance to the datastore."""
+        """
+        Saves the instance to the datastore with the following steps:
+        1. Validate all the fields
+        2. Assign an ID if the object is new
+        3. Save to the datastore.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    title = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein", title="Mr.")
+        >>> f.save()
+        True
+        >>> f.delete()
+        """
         if not self.is_valid():
             return self._errors
         _new = self.is_new()
@@ -258,7 +325,20 @@ class Model(object):
         return True
 
     def key(self, att=None):
-        """Returns the Redis key where the values are stored."""
+        """
+        Returns the Redis key where the values are stored.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    title = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein", title="Mr.")
+        >>> f.save()
+        True
+        >>> f.key() == "%s:%s" % (f.__class__.__name__, f.id)
+        True
+        """
         if att is not None:
             return self._key[self.id][att]
         else:
@@ -273,27 +353,73 @@ class Model(object):
         pipeline.execute()
 
     def is_new(self):
-        """Returns True if the instance is new.
+        """
+        Returns True if the instance is new.
 
         Newness is based on the presence of the _id attribute.
         """
         return not hasattr(self, '_id')
 
     def incr(self, att, val=1):
-        """Increments a counter."""
+        """
+        Increments a counter.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    cnt = models.Counter()
+        ...
+        >>> f = Foo()
+        >>> f.save()
+        True
+        >>> f.incr('cnt', 10)
+        >>> f.cnt
+        10
+        >>> f.delete()
+        """
         if att not in self.counters:
             raise ValueError("%s is not a counter.")
         self.db.hincrby(self.key(), att, val)
 
     def decr(self, att, val=1):
-        """Decrements a counter."""
+        """
+        Decrements a counter.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    cnt = models.Counter()
+        ...
+        >>> f = Foo()
+        >>> f.save()
+        True
+        >>> f.incr('cnt', 10)
+        >>> f.cnt
+        10
+        >>> f.decr('cnt', 2)
+        >>> f.cnt
+        8
+        >>> f.delete()
+        """
         self.incr(att, -1 * val)
 
 
     @property
     def attributes_dict(self):
-        """Returns the mapping of the model attributes and their
+        """
+        Returns the mapping of the model attributes and their
         values.
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    title = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein", title="Mr.")
+        >>> f.attributes_dict
+        {'name': 'Einstein', 'title': 'Mr.'}
+
+
+        .. NOTE: the key ``id`` is present *only if* the object has been saved before.
+
         """
         h = {}
         for k in self.attributes.keys():
@@ -319,7 +445,9 @@ class Model(object):
 
     @id.setter
     def id(self, val):
-        """Returns the id of the instance as a string."""
+        """
+        Setting the id for the object will fetch it from the datastorage.
+        """
         self._id = str(val)
         stored_attrs = self.db.hgetall(self.key())
         attrs = self.attributes.values()
@@ -338,7 +466,8 @@ class Model(object):
 
     @property
     def lists(self):
-        """Returns the lists of the model.
+        """
+        Returns the lists of the model.
 
         Returns a dict with models attribute name as keys
         and ListField descriptors as values.
@@ -347,7 +476,10 @@ class Model(object):
 
     @property
     def indices(self):
-        """Return a list of the indices of the model."""
+        """
+        Return a list of the indices of the model.
+        ie: all attributes with index=True.
+        """
         return self._indices
 
     @property

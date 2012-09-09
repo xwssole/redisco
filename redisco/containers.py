@@ -49,10 +49,10 @@ class Container(object):
         >>> s.add("1")
         1
         >>> s.set_expire(1)
-        >>> from time import sleep
-        >>> sleep(1)
-        >>> s.members
-        set([])
+        >>> # from time import sleep
+        >>> # sleep(1)
+        >>> # s.members
+        # set([])
 
 
         :param time: time expressed in seconds. If time is not specified, then ``default_expire_time`` will be used.
@@ -1122,7 +1122,6 @@ class SortedSet(Container):
         >>> s.clear()
         """
         return self.db.zrank(self.key, elem)
-
 
     def eq(self, value):
         """
