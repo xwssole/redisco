@@ -53,6 +53,7 @@ class Container(object):
         >>> # sleep(1)
         >>> # s.members
         # set([])
+        >>> s.clear()
 
 
         :param time: time expressed in seconds. If time is not specified, then ``default_expire_time`` will be used.
