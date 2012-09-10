@@ -1,9 +1,8 @@
 import os
 import unittest
-from connection import ConnectionTestCase
-from containers import (SetTestCase, ListTestCase, TypedListTestCase, 
+from redisco.containerstests import (SetTestCase, ListTestCase, TypedListTestCase, 
         SortedSetTestCase, HashTestCase)
-from models import (ModelTestCase, DateFieldTestCase, FloatFieldTestCase,
+from redisco.models.basetests import (ModelTestCase, DateFieldTestCase, FloatFieldTestCase,
         BooleanFieldTestCase, ListFieldTestCase, ReferenceFieldTestCase,
         DateTimeFieldTestCase, CounterFieldTestCase, CharFieldTestCase,
         MutexTestCase,)
@@ -17,7 +16,6 @@ typed_list_suite = unittest.TestLoader().loadTestsFromTestCase(TypedListTestCase
 
 def all_tests():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ConnectionTestCase))
     suite.addTest(unittest.makeSuite(SetTestCase))
     suite.addTest(unittest.makeSuite(ListTestCase))
     suite.addTest(unittest.makeSuite(TypedListTestCase))
