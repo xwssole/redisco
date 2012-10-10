@@ -106,15 +106,9 @@ class Attribute(object):
             return (self.name, 'unique could not be indexed')
 
         encoded = self.typecast_for_storage(val)
-        matches = instance.__class__.objects.get_by_unique(**{self.name: encoded})
-        if matches and len(matches) > 0:
-            try:
-                instance_id = instance.id
-                no_id = False
-            except MissingID:
-                no_id = True
-            if (len(matches) != 1) or no_id or (matches.first().id != instance.id):
-                return (self.name, 'not unique',)
+        same = len(instance.__class__.objects.get_by_unique(**{self.name: encoded}))
+        if same > (0 if instance.is_new() else 1):
+            return (self.name, 'not unique',)
 
 
 class CharField(Attribute):
