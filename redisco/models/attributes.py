@@ -106,7 +106,8 @@ class Attribute(object):
             return (self.name, 'unique could not be indexed')
 
         encoded = self.typecast_for_storage(val)
-        same = len(instance.__class__.objects.get_by_unique(**{self.name: encoded}))
+        matches = instance.__class__.objects.get_by_unique(**{self.name: encoded})
+        same = 0 if matches is None else len(matches)
         if same > (0 if instance.is_new() else 1):
             return (self.name, 'not unique',)
 
