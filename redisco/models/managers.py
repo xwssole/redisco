@@ -39,10 +39,14 @@ class Manager(object):
     def get_by_id(self, id):
         return self.get_model_set().get_by_id(id)
 
+    def get_by_unique(self, **kwargs):
+        assert len(kwargs) == 1
+        return self.get_model_set().get_by_unique(
+            kwargs.keys()[0], kwargs.values()[0])
+
     def order(self, field):
         return self.get_model_set().order(field)
 
     def zfilter(self, **kwargs):
         return self.get_model_set().zfilter(**kwargs)
-
 

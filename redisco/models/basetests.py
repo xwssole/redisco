@@ -532,6 +532,40 @@ class ModelTestCase(RediscoTestCase):
 
         self.assert_('1' in self.client.smembers('People:all'))
 
+class Employee(models.Model):
+    name = models.Attribute(unique=True)
+    email = models.CharField(unique=True)
+
+class UniqueAttributeTestCase(RediscoTestCase):
+    
+    def test_unique_object_save(self):
+        employee = Employee(name='Clark Kent', email='Keng@gmail.com')
+        self.assertTrue(employee.is_valid())
+        employee.save() 
+
+        self.assertTrue('Employee:name:_uniques' in 
+                            employee.db.keys())
+        self.assertTrue(employee.name in employee.db.hkeys(
+            Employee._key['name']['_uniques']))
+        self.assertTrue(employee.id == employee.db.hget(
+            Employee._key['name']['_uniques'], employee.name))
+
+    def test_unique_object_delete(self):
+        employee = Employee(name='Clark Kent', email='Keng@gmail.com')
+        employee.save() 
+
+        employee.delete()
+        self.assertFalse(Employee.objects.get_by_unique(name='Clark Kent'))
+
+    def test_unique_objects_load(self):
+        employee = Employee(name='Clark Kent', email='Keng@gmail.com')
+        employee.save() 
+        
+        emp = Employee.objects.get_by_unique(name='Clark Kent')
+        self.assertTrue(emp)
+        self.assertEqual(employee.id, emp.id)
+        self.assertEqual(employee.name, emp.name)
+        self.assertEqual(employee.email, emp.email)
 
 class Event(models.Model):
     name = models.CharField(required=True)

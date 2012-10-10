@@ -129,6 +129,24 @@ def _initialize_indices(model_class, name, bases, attrs):
     if model_class._meta['indices']:
         model_class._indices.extend(model_class._meta['indices'])
 
+def _initialize_uniques(model_class, name, bases, attrs):
+    """
+    Stores the list of unique attributes.
+    """
+    model_class._uniques = []
+    for parent in bases:
+        if not isinstance(parent, ModelBase):
+            continue
+        for (k, v) in parent._attributes.iteritems():
+            if hasattr(v, 'unique') and v.unique:
+                model_class._uniques.append(k)
+    
+    for (k, v) in attrs.iteritems():
+        if hasattr(v, 'unique') and v.unique:
+            model_class._uniques.append(k)
+
+    if model_class._meta['uniques']:
+        model_class._uniques.extend(model_class._meta['uniques'])
 
 def _initialize_counters(model_class, name, bases, attrs):
     """
@@ -208,6 +226,7 @@ class ModelBase(type):
         _initialize_counters(cls, name, bases, attrs)
         _initialize_lists(cls, name, bases, attrs)
         _initialize_indices(cls, name, bases, attrs)
+        _initialize_uniques(cls, name, bases, attrs)
         _initialize_key(cls, name)
         _initialize_manager(cls)
         # if targeted by a reference field using a string,
@@ -347,6 +366,7 @@ class Model(object):
     def delete(self):
         """Deletes the object from the datastore."""
         pipeline = self.db.pipeline()
+        self._delete_from_uniques(pipeline)
         self._delete_from_indices(pipeline)
         self._delete_membership(pipeline)
         pipeline.delete(self.key())
@@ -483,6 +503,14 @@ class Model(object):
         return self._indices
 
     @property
+    def uniques(self):
+        """
+        Return a list of the unique attributes of the model.
+        ie: all attributes with unique=True
+        """
+        return self._uniques
+
+    @property
     def references(self):
         """Returns the mapping of reference fields of the model."""
         return self._references
@@ -520,6 +548,20 @@ class Model(object):
         return bool(redisco.get_client().exists(cls._key[str(id)]) or
                     redisco.get_client().sismember(cls._key['all'], str(id)))
 
+    @classmethod
+    def get_id_by_unique(cls, att, value):
+        """
+        Return the object id with value of specified att.
+        If not exists, return None.
+        """
+        descriptor = cls._attributes[att]
+        value = descriptor.typecast_for_storage(value)
+        id = redisco.get_client().hget(
+                    cls._unique_key_for(att), value)
+        if id is None:
+            return None 
+        return int(id)
+
     ###################
     # Private methods #
     ###################
@@ -536,6 +578,7 @@ class Model(object):
         """
         pipeline = self.db.pipeline()
         self._create_membership(pipeline)
+        self._add_to_uniques(pipeline)
         self._update_indices(pipeline)
         h = {}
         # attributes
@@ -595,6 +638,72 @@ class Model(object):
         same class.
         """
         Set(self._key['all'], pipeline=pipeline).remove(self.id)
+
+    ############
+    # UNIQUES! #
+    ############
+
+    @classmethod
+    def _unique_key_for(cls, att):
+        """
+        Returns a key based on the attribute.
+        The key is used for unique.
+        """
+        return cls._key[att]['_uniques']
+
+    def _add_to_uniques(self, pipeline=None):
+        """Adds the object to the uniques."""
+        for att in self.uniques:
+            self._add_to_unique(att, pipeline=pipeline)
+
+    def _delete_from_uniques(self, pipeline):
+        """
+        Deletes the object's id from the attributes unique hash.
+        """
+        for att in self.uniques:
+            self._delete_from_unique(att, pipeline=pipeline)
+
+    def _attribute_value_for_storage(self, att):
+        """
+        Get attribute value for storage.
+        """
+        value = getattr(self, att)
+        if callable(value):
+            value = value()
+        
+        if value is None:
+            return
+
+        descriptor = self.attributes[att]
+        value = descriptor.typecast_for_storage(value)
+        return value
+
+    def _add_to_unique(self, att, pipeline):
+        """
+        Adds the id to the unique.
+        This also adds to the _uniques set of the object.
+        """
+        unique = self._unique_key_for(att)
+        assert unique
+
+        value = self._attribute_value_for_storage(att)
+        if value is None:
+            return
+
+        pipeline.hset(unique, value, self.id)  
+
+    def _delete_from_unique(self, att, pipeline):
+        """
+        Delete the object's id from the @att unique hash.
+        """
+        unique = self._unique_key_for(att)
+        assert unique
+        
+        value = self._attribute_value_for_storage(att)
+        if value is None:
+            return
+        
+        pipeline.hdel(unique, value)
 
     ############
     # INDICES! #

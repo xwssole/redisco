@@ -83,6 +83,36 @@ class ModelSet(Set):
         if self.model_class.exists(id):
             return self._get_item_with_id(id)
 
+    def get_by_unique(self, att, value):
+        """
+        Returns the object by the unique value of att. 
+
+        :param att: the unique attribute of the objects to lookup.
+        :param value: the unique value of the objects to lookup.
+        :returns: The object instance or None if not found.
+
+        >>> from redis import models
+        >>> class Foo(models.Model):
+        ...     name = models.Attribute(unique=True)
+        ...
+        >>> f = Foo(name='Einstein')
+        >>> f.save()
+        True
+        >>> Foo.objects.get_by_unique(name='Einstein') == f
+        True
+        >>> [f.delete() for f in Foo.objects.all()]
+        [...]
+        """
+
+        if (self._filters or self._exclusions or self._zfilters):
+            return
+        
+        id = self.model_class.get_id_by_unique(att, value)
+        if id is None:
+            return None
+        assert (self.model_class.exists(id))
+        return self._get_item_with_id(id)
+
     def first(self):
         """
         Return the first object of a collections.

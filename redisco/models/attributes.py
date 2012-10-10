@@ -46,6 +46,10 @@ class Attribute(object):
         self.default = default
         self.unique = unique
 
+        if self.unique:
+            self.required = True
+            self.indexed = False
+
     def __get__(self, instance, owner):
         try:
             return getattr(instance, '_' + self.name)
@@ -98,9 +102,12 @@ class Attribute(object):
             raise FieldValidationError(errors)
 
     def validate_uniqueness(self, instance, val):
+        if self.indexed and self.unique:
+            return (self.name, 'unique could not be indexed')
+
         encoded = self.typecast_for_storage(val)
-        matches = instance.__class__.objects.filter(**{self.name: encoded})
-        if len(matches) > 0:
+        matches = instance.__class__.objects.get_by_unique(**{self.name: encoded})
+        if matches and len(matches) > 0:
             try:
                 instance_id = instance.id
                 no_id = False
