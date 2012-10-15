@@ -470,7 +470,8 @@ class ModelTestCase(RediscoTestCase):
         self.assert_(('student_id', 'not unique') in student.errors)
 
         student = Student()
-        self.assertTrue(student.is_valid())
+        self.assertFalse(student.is_valid())
+        self.assert_(('student_id', 'required') in student.errors)
 
     def test_long_integers(self):
         class Tweet(models.Model):

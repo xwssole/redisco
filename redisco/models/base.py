@@ -585,14 +585,14 @@ class Model(object):
         for k, v in self.attributes.iteritems():
             if isinstance(v, DateTimeField):
                 if v.auto_now:
-                    setattr(self, k, datetime.now(tz=tzutc()))
+                    v.__set__(self, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
-                    setattr(self, k, datetime.now(tz=tzutc()))
+                    v.__set__(self, datetime.now(tz=tzutc()))
             elif isinstance(v, DateField):
                 if v.auto_now:
-                    setattr(self, k, datetime.now(tz=tzutc()))
+                    v.__set__(self, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
-                    setattr(self, k, datetime.now(tz=tzutc()))
+                    v.__set__(self, datetime.now(tz=tzutc()))
             for_storage = getattr(self, k)
             if for_storage is not None:
                 h[k] = v.typecast_for_storage(for_storage)
