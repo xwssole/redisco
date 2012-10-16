@@ -48,7 +48,6 @@ class Attribute(object):
         self.modified = False
 
         if self.unique:
-            self.required = True
             self.indexed = False
 
     def __get__(self, instance, owner):
