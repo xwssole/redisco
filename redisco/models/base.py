@@ -473,7 +473,8 @@ class Model(object):
         attrs = self.attributes.values()
         for att in attrs:
             if att.name in stored_attrs and not isinstance(att, Counter):
-                att.__set__(self, att.typecast_for_read(stored_attrs[att.name]))
+                setattr(self, '_' + att.name, 
+                    att.typecast_for_read(stored_attrs[att.name]))
 
     @property
     def attributes(self):
@@ -581,6 +582,7 @@ class Model(object):
         self._add_to_uniques(pipeline)
         self._update_indices(pipeline)
         h = {}
+        keys_to_be_delete = []
         # attributes
         for k, v in self.attributes.iteritems():
             if isinstance(v, DateTimeField):
@@ -593,9 +595,13 @@ class Model(object):
                     v.__set__(self, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
                     v.__set__(self, datetime.now(tz=tzutc()))
-            for_storage = getattr(self, k)
-            if for_storage is not None:
-                h[k] = v.typecast_for_storage(for_storage)
+            if v.modified:
+                for_storage = getattr(self, k)
+                if for_storage is not None:
+                    h[k] = v.typecast_for_storage(for_storage)
+                else:
+                    keys_to_be_delete.append(k)
+                
         # indices
         for index in self.indices:
             if index not in self.lists and index not in self.attributes:
@@ -607,7 +613,9 @@ class Model(object):
                         h[index] = unicode(v)
                     except UnicodeError:
                         h[index] = unicode(v.decode('utf-8'))
-        pipeline.delete(self.key())
+                else:
+                    keys_to_be_delete.append(index)
+
         if h:
             pipeline.hmset(self.key(), h)
 
@@ -621,6 +629,10 @@ class Model(object):
                     l.extend([item.id for item in values])
                 else:
                     l.extend(values)
+
+        if keys_to_be_delete:
+            pipeline.hdel(self.key(), *keys_to_be_delete)
+
         pipeline.execute()
 
     ##############

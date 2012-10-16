@@ -45,6 +45,7 @@ class Attribute(object):
         self.validator = validator
         self.default = default
         self.unique = unique
+        self.modified = False
 
         if self.unique:
             self.required = True
@@ -58,7 +59,12 @@ class Attribute(object):
             return self.default
 
     def __set__(self, instance, value):
-        setattr(instance, '_' + self.name, value)
+        attribute_name = '_' + self.name
+        if not hasattr(instance, attribute_name):
+            self.modified = True 
+        elif getattr(instance, attribute_name) != value:
+            self.modified = True 
+        setattr(instance, attribute_name, value)
 
     def typecast_for_read(self, value):
         """Typecasts the value for reading from Redis."""
