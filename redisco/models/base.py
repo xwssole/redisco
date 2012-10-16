@@ -577,12 +577,9 @@ class Model(object):
         This method also creates the indices and saves the lists
         associated to the object.
         """
-        pipeline = self.db.pipeline()
-        self._create_membership(pipeline)
-        self._add_to_uniques(pipeline)
-        self._update_indices(pipeline)
         h = {}
         keys_to_be_delete = []
+
         # attributes
         for k, v in self.attributes.iteritems():
             if isinstance(v, DateTimeField):
@@ -615,6 +612,11 @@ class Model(object):
                         h[index] = unicode(v.decode('utf-8'))
                 else:
                     keys_to_be_delete.append(index)
+
+        pipeline = self.db.pipeline()
+        self._create_membership(pipeline)
+        self._add_to_uniques(pipeline)
+        self._update_indices(pipeline)
 
         if h:
             pipeline.hmset(self.key(), h)
