@@ -138,9 +138,9 @@ class Set(Container):
         """
         return self.db.spop(self.key)
 
-    def __repr__(self):
-        return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
-                self.members)
+    #def __repr__(self):
+    #    return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
+    #            self.members)
 
     def isdisjoint(self, other):
         """
