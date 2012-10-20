@@ -6,7 +6,7 @@ from redisco.containers import Set, List, SortedSet, NonPersistentList
 from attributes import *
 from key import Key
 from managers import ManagerDescriptor, Manager
-from exceptions import FieldValidationError, MissingID, BadKeyError
+from exceptions import FieldValidationError, MissingID, ObjectNotExist, BadKeyError
 from attributes import Counter
 
 __all__ = ['Model', 'from_key']
@@ -468,7 +468,13 @@ class Model(object):
         """
         Setting the id for the object will fetch it from the datastorage.
         """
+        if not val:
+            raise ObjectNotExist 
+
         self._id = str(val)
+        if not self.db.exists(self.key()):
+            raise ObjectNotExist
+
         stored_attrs = self.db.hgetall(self.key())
         attrs = self.attributes.values()
         for att in attrs:

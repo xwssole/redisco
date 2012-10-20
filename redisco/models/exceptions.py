@@ -10,6 +10,9 @@ class ValidationError(Error):
 class MissingID(Error):
     pass
 
+class ObjectNotExist(Error):
+    pass
+
 class AttributeNotIndexed(Error):
     pass
 
