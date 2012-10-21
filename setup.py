@@ -14,7 +14,7 @@ def read(fname):
 setup(name='redisco',
       version=version,
       description='Python Containers and Simple Models for Redis',
-      url='http://kiddouk.github.com/redisco',
+      url='http://xwssole.github.com/redisco',
       download_url='',
       long_description=read('README.rst'),
       install_requires=read('requirements.txt').splitlines(),
