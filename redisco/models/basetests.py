@@ -825,7 +825,7 @@ class ReferenceFieldTestCase(RediscoTestCase):
             m = models.CharField()
             word = models.ReferenceField(Word)
 
-        Word.objects.create()
+        Word.objects.create(placeholder='abcd')
         word = Word.objects.all()[0]
         Character.objects.create(n=32, m='a', word=word)
         Character.objects.create(n=33, m='b', word=word)
