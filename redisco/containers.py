@@ -859,16 +859,16 @@ class SortedSet(Container):
         return self.zrangebyscore("-inf", v,
                                   start=offset, num=limit)
 
-    def gt(self, v, limit=None, offset=None):
+    def gt(self, v, limit=None, offset=None, withscores=False):
         """Returns the list of the members of the set that have scores
         greater than v.
         """
         if limit is not None and offset is None:
             offset = 0
         return self.zrangebyscore("(%f" % v, "+inf",
-                                  start=offset, num=limit)
+                                  start=offset, num=limit, withscores=withscores)
 
-    def ge(self, v, limit=None, offset=None):
+    def ge(self, v, limit=None, offset=None, withscores=False):
         """Returns the list of the members of the set that have scores
         greater than or equal to v.
 
@@ -880,7 +880,7 @@ class SortedSet(Container):
         if limit is not None and offset is None:
             offset = 0
         return self.zrangebyscore("%f" % v, "+inf",
-                                  start=offset, num=limit)
+                                  start=offset, num=limit, withscores=withscores)
 
     def between(self, min, max, limit=None, offset=None):
         """
@@ -1041,6 +1041,23 @@ class SortedSet(Container):
         >>> s.clear()
         """
         return self.db.zrangebyscore(self.key, min, max, **kwargs)
+
+    def zrevrangebyscore(self, max, min, **kwargs):
+        """
+        Returns the range of elements included between the scores (min and max)
+
+        >>> s = SortedSet("foo")
+        >>> s.add('a', 10)
+        1
+        >>> s.add('b', 20)
+        1
+        >>> s.add('c', 30)
+        1
+        >>> s.zrangebyscore(20, 20)
+        ['c', 'b']
+        >>> s.clear()
+        """
+        return self.db.zrevrangebyscore(self.key, max, min, **kwargs)
 
     def zcard(self):
         """
