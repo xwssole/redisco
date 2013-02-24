@@ -84,6 +84,11 @@ class Set(Container):
     This class represent a Set in redis.
     """
 
+
+    def __repr__(self):
+        return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
+                                 self.members)
+
     def sadd(self, *values):
         """
         Add the specified members to the Set.
@@ -1054,7 +1059,7 @@ class SortedSet(Container):
         >>> s.add('c', 30)
         1
         >>> s.zrangebyscore(20, 20)
-        ['c', 'b']
+        ['b']
         >>> s.clear()
         """
         return self.db.zrevrangebyscore(self.key, max, min, **kwargs)
