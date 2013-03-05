@@ -84,6 +84,11 @@ class Set(Container):
     This class represent a Set in redis.
     """
 
+
+    def __repr__(self):
+        return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
+                                 self.members)
+
     def sadd(self, *values):
         """
         Add the specified members to the Set.
@@ -138,9 +143,9 @@ class Set(Container):
         """
         return self.db.spop(self.key)
 
-    def __repr__(self):
-        return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
-                self.members)
+    #def __repr__(self):
+    #    return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
+    #            self.members)
 
     def isdisjoint(self, other):
         """
@@ -806,23 +811,29 @@ class SortedSet(Container):
     def __reversed__(self):
         return self.revmembers.__iter__()
 
-    def __repr__(self):
-        return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
-                                 self.members)
+    # def __repr__(self):
+    #     return "<%s '%s' %s>" % (self.__class__.__name__, self.key,
+    #                              self.members)
 
     @property
     def _min_score(self):
         """
         Returns the minimum score in the SortedSet.
         """
-        return self.zscore(self.__getitem__(0))
+        try:
+            return self.zscore(self.__getitem__(0))
+        except IndexError:
+            return None
 
     @property
     def _max_score(self):
         """
         Returns the maximum score in the SortedSet.
         """
-        return self.zscore(self.__getitem__(-1))
+        try:
+            self.zscore(self.__getitem__(-1))
+        except IndexError:
+            return None
 
     def lt(self, v, limit=None, offset=None):
         """
@@ -835,7 +846,7 @@ class SortedSet(Container):
         """
         if limit is not None and offset is None:
             offset = 0
-        return self.zrangebyscore(self._min_score, "(%f" % v,
+        return self.zrangebyscore("-inf", "(%f" % v,
                                   start=offset, num=limit)
 
     def le(self, v, limit=None, offset=None):
@@ -850,19 +861,19 @@ class SortedSet(Container):
         """
         if limit is not None and offset is None:
             offset = 0
-        return self.zrangebyscore(self._min_score, v,
+        return self.zrangebyscore("-inf", v,
                                   start=offset, num=limit)
 
-    def gt(self, v, limit=None, offset=None):
+    def gt(self, v, limit=None, offset=None, withscores=False):
         """Returns the list of the members of the set that have scores
         greater than v.
         """
         if limit is not None and offset is None:
             offset = 0
-        return self.zrangebyscore("(%f" % v, self._max_score,
-                                  start=offset, num=limit)
+        return self.zrangebyscore("(%f" % v, "+inf",
+                                  start=offset, num=limit, withscores=withscores)
 
-    def ge(self, v, limit=None, offset=None):
+    def ge(self, v, limit=None, offset=None, withscores=False):
         """Returns the list of the members of the set that have scores
         greater than or equal to v.
 
@@ -873,8 +884,8 @@ class SortedSet(Container):
         """
         if limit is not None and offset is None:
             offset = 0
-        return self.zrangebyscore("(%f" % v, self._max_score,
-                                  start=offset, num=limit)
+        return self.zrangebyscore("%f" % v, "+inf",
+                                  start=offset, num=limit, withscores=withscores)
 
     def between(self, min, max, limit=None, offset=None):
         """
@@ -1035,6 +1046,23 @@ class SortedSet(Container):
         >>> s.clear()
         """
         return self.db.zrangebyscore(self.key, min, max, **kwargs)
+
+    def zrevrangebyscore(self, max, min, **kwargs):
+        """
+        Returns the range of elements included between the scores (min and max)
+
+        >>> s = SortedSet("foo")
+        >>> s.add('a', 10)
+        1
+        >>> s.add('b', 20)
+        1
+        >>> s.add('c', 30)
+        1
+        >>> s.zrangebyscore(20, 20)
+        ['b']
+        >>> s.clear()
+        """
+        return self.db.zrevrangebyscore(self.key, max, min, **kwargs)
 
     def zcard(self):
         """
