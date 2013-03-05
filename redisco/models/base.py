@@ -181,6 +181,15 @@ def _initialize_manager(model_class):
     """
     model_class.objects = ManagerDescriptor(Manager(model_class))
 
+def _initialize_auto_increment(model_class):
+    """
+    Initializes the objects id generation policy.
+    Default is auto-increment.
+    """
+    if hasattr(model_class._meta.meta, 'auto_increment'):
+        model_class.auto_increment = model_class._meta['auto_increment']
+    else:
+        model_class.auto_increment = True 
 
 class ModelOptions(object):
     """Handles options defined in Meta class of the model.
@@ -229,6 +238,7 @@ class ModelBase(type):
         _initialize_uniques(cls, name, bases, attrs)
         _initialize_key(cls, name)
         _initialize_manager(cls)
+        _initialize_auto_increment(cls)
         # if targeted by a reference field using a string,
         # override for next try
         for target, model_class, att in _deferred_refs:
@@ -273,6 +283,7 @@ class Model(object):
                 field.validate(self)
             except FieldValidationError, e:
                 self._errors.extend(e.errors)
+        self.validate_id()
         self.validate()
         return not bool(self._errors)
 
@@ -296,6 +307,14 @@ class Model(object):
 
         """
         pass
+
+    def validate_id(self):
+        """
+        The function is here to help you validate your model's id generation policy.
+        If not auto incremented and model id not specified by user, it should add error.
+        """
+        if not self.auto_increment and self.is_new():
+            self._errors.append(('id', 'model id should be specified'))
 
     def update_attributes(self, **kwargs):
         """
@@ -452,6 +471,11 @@ class Model(object):
             h['id'] = self.id
         return h
 
+    def set_id(self, val):
+        """
+        Setting the id of the object and without fetch it from datastorage.
+        """
+        self._id = str(val)
 
     @property
     def id(self):

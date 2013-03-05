@@ -919,6 +919,42 @@ class CounterFieldTestCase(RediscoTestCase):
         self.assertEqual(1, post.liked)
 
 
+class AutoIncrementTestCase(RediscoTestCase):
+
+    def test_default_auto_increment(self):
+
+        class Student(models.Model):
+            name = models.CharField()
+
+            class Meta:
+                auto_increment = True
+
+        student = Student.objects.create(name='eric')
+        self.assert_(student)
+
+    def test_no_auto_increment(self):
+        class Student(models.Model):
+            name = models.CharField()
+
+            class Meta:
+                auto_increment = False
+
+        student = Student.objects.create(name='eric')
+        self.assertFalse(student.is_valid())
+        self.assert_(('id', 'model id should be specified') in student.errors)
+
+    def test_save_no_auto_increment(self):
+        class Student(models.Model):
+            name = models.CharField()
+
+            class Meta:
+                auto_increment = False
+
+        student = Student.objects.create(name='eric')
+        student.set_id(1000)
+        self.assertTrue(student.is_valid())
+
+
 class MutexTestCase(RediscoTestCase):
 
     def setUp(self):
