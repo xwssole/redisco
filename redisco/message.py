@@ -1,21 +1,29 @@
 # -*- coding: utf-8 -*-
 # doctest: +ELLIPSIS
-
-__all__ = ['publish',
-           'subscribe',
-           'unsubscribe',
-           'psubscribe',
-           'punsubscribe',
-           'listen']
+__all__ = ['MessageQueue']
 
 import redisco
 
-_conn = redisco.connection
-_pubsub = _conn.pubsub()
+class MessageQueue(object):
 
-publish = _conn.publish
-subscribe = _pubsub.subscribe
-unsubscribe = _pubsub.unsubscribe
-psubscribe = _pubsub.psubscribe
-punsubscribe = _pubsub.punsubscribe
-listen = _pubsub.listen
+    def __init__(self):
+        self._conn = redisco.connection
+        self._pubsub = self._conn.pubsub()
+
+    def publish(self, *args, **kwargs):
+        return self._conn.publish(*args, **kwargs)
+
+    def subscribe(self, *args, **kwargs):
+        return self._pubsub.subscribe(*args, **kwargs)
+
+    def unsubscribe(self, *args, **kwargs):
+        return self._pubsub.unsubscribe(*args, **kwargs)
+
+    def psubscribe(self, *args, **kwargs):
+        return self._pubsub.psubscribe(*args, **kwargs)
+
+    def punsubscribe(self, *args, **kwargs):
+        return self._pubsub.punsubscribe(*args, **kwargs)
+
+    def listen(self, *args, **kwargs):
+        return self._pubsub.listen(*args, **kwargs)
