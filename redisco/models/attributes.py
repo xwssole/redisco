@@ -200,7 +200,7 @@ class DateTimeField(Attribute):
             dt = datetime.fromtimestamp(float(value), tzutc())
             # And gently override (ie: not convert) to the TZ to UTC
             return dt
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return None
 
     def typecast_for_storage(self, value):
