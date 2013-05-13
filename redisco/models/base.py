@@ -628,6 +628,7 @@ class Model(object):
                     h[k] = v.typecast_for_storage(for_storage)
                 else:
                     keys_to_be_delete.append(k)
+                v.modified = False
                 
         # indices
         for index in self.indices:
