@@ -45,7 +45,6 @@ class Attribute(object):
         self.validator = validator
         self.default = default
         self.unique = unique
-        self.modified = False
 
         if self.unique:
             self.indexed = False
@@ -59,10 +58,6 @@ class Attribute(object):
 
     def __set__(self, instance, value):
         attribute_name = '_' + self.name
-        if not hasattr(instance, attribute_name):
-            self.modified = True 
-        elif getattr(instance, attribute_name) != value:
-            self.modified = True 
         setattr(instance, attribute_name, value)
 
     def typecast_for_read(self, value):
