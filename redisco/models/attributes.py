@@ -58,7 +58,10 @@ class Attribute(object):
 
     def __set__(self, instance, value):
         attribute_name = '_' + self.name
-        setattr(instance, attribute_name, value)
+        origin_value = getattr(instance, attribute_name, None)
+        if origin_value != value:
+            setattr(instance, attribute_name, value)
+            instance._modified_attrs.add(self.name)
 
     def typecast_for_read(self, value):
         """Typecasts the value for reading from Redis."""

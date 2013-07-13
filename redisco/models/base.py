@@ -251,6 +251,7 @@ class Model(object):
     __metaclass__ = ModelBase
 
     def __init__(self, **kwargs):
+        self._modified_attrs = set()
         self.update_attributes(**kwargs)
 
     def is_valid(self):
@@ -622,12 +623,13 @@ class Model(object):
                     v.__set__(self, datetime.now(tz=tzutc()))
                 if v.auto_now_add and _new:
                     v.__set__(self, datetime.now(tz=tzutc()))
-            for_storage = getattr(self, k)
-            if for_storage is not None:
-                h[k] = v.typecast_for_storage(for_storage)
-            else:
-                keys_to_be_delete.append(k)
-                
+            if k in self._modified_attrs:
+                for_storage = getattr(self, k)
+                if for_storage is not None:
+                    h[k] = v.typecast_for_storage(for_storage)
+                else:
+                    keys_to_be_delete.append(k)
+
         # indices
         for index in self.indices:
             if index not in self.lists and index not in self.attributes:
@@ -665,6 +667,8 @@ class Model(object):
             pipeline.hdel(self.key(), *keys_to_be_delete)
 
         pipeline.execute()
+
+        self._modified_attrs.clear()
 
     ##############
     # Membership #
