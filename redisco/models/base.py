@@ -608,6 +608,7 @@ class Model(object):
         This method also creates the indices and saves the lists
         associated to the object.
         """
+
         h = {}
         keys_to_be_delete = []
 

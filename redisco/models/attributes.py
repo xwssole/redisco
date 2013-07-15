@@ -2,6 +2,7 @@
 """
 Defines the fields that can be added to redisco models.
 """
+import copy
 import time
 from datetime import datetime, date
 from dateutil.tz import tzutc, tzlocal
