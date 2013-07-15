@@ -55,6 +55,22 @@ class ModelTestCase(RediscoTestCase):
         jejomar = Person.objects.get_by_id('2')
         self.assertEqual(None, jejomar.last_name)
 
+    def test_write_to(self):
+        person = Person(first_name="Granny", last_name="Goose")
+        person.save()
+
+        person = Person.objects.get_by_id(person.id)
+        person.first_name = 'Pages'
+        
+        pipeline = person.db.pipeline()
+        person.write_to(pipeline)
+
+        with Mutex(person):
+            pipeline.execute()
+
+        person = Person.objects.get_by_id(person.id)
+        self.assertEqual('Pages', person.first_name)
+
     def test_unicode(self):
         p = Person(first_name=u"Niña", last_name="Jose")
         self.assert_(p.save())

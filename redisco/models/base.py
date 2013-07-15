@@ -360,7 +360,35 @@ class Model(object):
         if _new:
             self._initialize_id()
         with Mutex(self):
-            self._write(_new)
+            pipeline = self.db.pipeline()
+            self._write(_new, pipeline)
+            pipeline.execute()
+        return True
+
+    def write_to(self, pipeline):
+        """
+        Write the instance modification to the datastore 
+        Note: write_to doesn't provide any mutex or 
+              transaction support!
+
+        >>> from redisco import models
+        >>> class Foo(models.Model):
+        ...    name = models.Attribute()
+        ...    title = models.Attribute()
+        ...
+        >>> f = Foo(name="Einstein", title="Mr.")
+        >>> pipeline = f.db.pipeline()
+        >>> f.write_to(pipeline)
+        True
+        >>> pipeline.execute()
+
+        """
+        if not self.is_valid():
+            return self._errors
+        if self.is_new():
+            self._errors.append(('id', 'cannot be empty'))
+            return self._errors
+        self._write(pipeline=pipeline)
         return True
 
     def key(self, att=None):
@@ -602,7 +630,7 @@ class Model(object):
         """Initializes the id of the instance."""
         self._id = str(self.db.incr(self._key['id']))
 
-    def _write(self, _new=False):
+    def _write(self, _new=False, pipeline=None):
         """Writes the values of the attributes to the datastore.
 
         This method also creates the indices and saves the lists
@@ -645,7 +673,6 @@ class Model(object):
                 else:
                     keys_to_be_delete.append(index)
 
-        pipeline = self.db.pipeline()
         self._create_membership(pipeline)
         self._add_to_uniques(pipeline)
         self._update_indices(pipeline)
@@ -666,8 +693,6 @@ class Model(object):
 
         if keys_to_be_delete:
             pipeline.hdel(self.key(), *keys_to_be_delete)
-
-        pipeline.execute()
 
         self._modified_attrs.clear()
 
