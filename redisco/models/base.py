@@ -252,6 +252,8 @@ class Model(object):
 
     def __init__(self, **kwargs):
         self._modified_attrs = set()
+        self._indice_keys = []
+        self._zindice_keys = []
         self.update_attributes(**kwargs)
 
     def is_valid(self):
@@ -535,6 +537,9 @@ class Model(object):
                 setattr(self, '_' + att.name, 
                     att.typecast_for_read(stored_attrs[att.name]))
 
+        self._indice_keys = Set(self.key()['_indices']).members
+        self._zindice_keys = Set(self.key()['_zindices']).members
+
     @property
     def attributes(self):
         """Return the attributes of the model.
@@ -804,33 +809,37 @@ class Model(object):
         t, index = index
         if t == 'attribute':
             pipeline.sadd(index, self.id)
+            self._indice_keys.append(index)
             pipeline.sadd(self.key()['_indices'], index)
         elif t == 'list':
             for i in index:
                 pipeline.sadd(i, self.id)
+                self._indice_keys.append(i)
                 pipeline.sadd(self.key()['_indices'], i)
         elif t == 'sortedset':
             zindex, index = index
             pipeline.sadd(index, self.id)
             pipeline.sadd(self.key()['_indices'], index)
+            self._indice_keys.append(index)
             descriptor = self.attributes[att]
             score = descriptor.typecast_for_storage(getattr(self, att))
             pipeline.zadd(zindex, self.id, score)
             pipeline.sadd(self.key()['_zindices'], zindex)
+            self._zindice_keys.append(zindex)
 
     def _delete_from_indices(self, pipeline):
         """Deletes the object's id from the sets(indices) it has been added
         to and removes its list of indices (used for housekeeping).
         """
-        s = Set(self.key()['_indices'])
-        z = Set(self.key()['_zindices'])
-        for index in s.members:
+        for index in self._indice_keys:
             pipeline.srem(index, self.id)
-        for index in z.members:
+        for index in self._zindice_keys:
             pipeline.zrem(index, self.id)
-        pipeline.delete(s.key)
-        pipeline.delete(z.key)
-
+        self._indice_keys = []
+        self._zindice_keys = []
+        pipeline.delete(self.key()['_indices'])
+        pipeline.delete(self.key()['_zindices'])
+        
     def _index_key_for(self, att, value=None):
         """Returns a key based on the attribute and its value.
 
